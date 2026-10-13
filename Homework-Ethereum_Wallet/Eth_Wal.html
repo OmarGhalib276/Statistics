@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereum Wallet Cryptography</title>
+    <!-- Ethers.js for Cryptographic Operations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-main: #070303;
+            --bg-card: #12090a;
+            --bg-card-hover: #1c0d0f;
+            --text-main: #e0e0e0;
+            --text-muted: #a69a9a;
+            --accent-red: #e63946;
+            --accent-red-dark: #8b1e28;
+            --border-red: rgba(230, 57, 70, 0.4);
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-main);
+            /* Aggiunta di un pattern a griglia puntinata rosso scuro */
+            background-image: radial-gradient(rgba(230, 57, 70, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--accent-red);
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+            /* Bagliore rosso radiale al centro dell'header */
+            background: radial-gradient(ellipse at top, rgba(230, 57, 70, 0.15) 0%, transparent 70%);
+            border-radius: 12px 12px 0 0;
+        }
+
+        h1 {
+            color: var(--accent-red);
+            font-size: 2.8rem;
+            margin: 0 0 10px 0;
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(230, 57, 70, 0.4);
+        }
+
+        h2 {
+            color: #ffffff;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            margin-top: 3rem;
+            border-bottom: 1px solid var(--border-red);
+            padding-bottom: 10px;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 24px;
+            background-color: var(--accent-red);
+            margin-right: 15px;
+            box-shadow: 0 0 8px var(--accent-red);
+        }
+
+        h3 {
+            color: var(--accent-red);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        p { margin-bottom: 15px; color: var(--text-muted); }
+
+        /* GRID LAYOUTS */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid #2a1114;
+            border-radius: 8px;
+            padding: 25px;
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+            backdrop-filter: blur(5px);
+        }
+
+        .card:hover {
+            border-color: var(--border-red);
+            box-shadow: 0 8px 25px rgba(230, 57, 70, 0.15);
+            transform: translateY(-2px);
+            background-color: var(--bg-card-hover);
+        }
+
+        .card-red {
+            border-top: 4px solid var(--accent-red);
+        }
+
+        /* INTERACTIVE SIMULATOR */
+        .simulator-box {
+            /* Sfondo con gradiente scuro verso il rosso */
+            background: linear-gradient(135deg, rgba(20, 9, 10, 0.95) 0%, rgba(35, 10, 13, 0.95) 100%);
+            border: 1px solid var(--accent-red);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 40px 0;
+            box-shadow: 0 10px 40px rgba(230, 57, 70, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simulator-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(230, 57, 70, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .btn {
+            background-color: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            display: block;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn:hover { 
+            background-color: #f04a57; 
+            box-shadow: 0 6px 20px rgba(230, 57, 70, 0.5);
+        }
+        
+        .btn:active { transform: scale(0.98); }
+
+        .step-container {
+            display: none;
+            border-left: 3px solid var(--accent-red);
+            padding-left: 20px;
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s ease forwards;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .step-title {
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step-title span {
+            background-color: var(--accent-red);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+            box-shadow: 0 0 10px rgba(230, 57, 70, 0.4);
+        }
+
+        .step-explanation {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .data-output {
+            background-color: #030101;
+            border: 1px solid rgba(230, 57, 70, 0.3);
+            color: var(--accent-red);
+            font-family: var(--font-mono);
+            padding: 15px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-size: 0.95rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background-color: var(--bg-card);
+        }
+
+        th, td {
+            border: 1px solid #3a161a;
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(230, 57, 70, 0.15);
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        /* HIGHLIGHTS */
+        .hl { color: var(--accent-red); font-weight: 600; text-shadow: 0 0 5px rgba(230,57,70,0.5); }
+        code {
+            font-family: var(--font-mono);
+            background: rgba(230, 57, 70, 0.15);
+            color: #ff6b77;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            border: 1px solid rgba(230, 57, 70, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>From Wallet Seed to Ethereum Address</h1>
+        <p style="color: #fff; font-size: 1.2rem; margin: 0;">Hashing, Key Derivation, and Cryptographic Primitives</p>
+    </header>
+
+    <section>
+        <p style="font-size: 1.1rem; text-align: center; max-width: 800px; margin: 0 auto 40px auto;">
+            The creation of an Ethereum address is not a single mathematical operation, but a strict pipeline of specialized cryptographic standards. This ensures defense-in-depth, separating key backup, digital signatures, and collision resistance into distinct layers.
+        </p>
+    </section>
+
+    <!-- INTERACTIVE SECTION -->
+    <section class="simulator-box">
+        <h2 style="margin-top: 0; border: none; justify-content: center;">Interactive Cryptographic Pipeline</h2>
+        <p style="text-align: center; margin-bottom: 30px;">
+            Experience the real-time transformation. Click to generate a random entropy source and watch how it sequentially morphs into a valid Ethereum address. All computations run securely in your browser.
+        </p>
+        
+        <button class="btn" id="startBtn" onclick="runPipeline()">Generate & Run Pipeline</button>
+
+        <div id="interactive-flow">
+            <!-- Step 1 -->
+            <div class="step-container" id="step1">
+                <div class="step-title"><span>BIP-39</span> Mnemonic Sentence</div>
+                <div class="step-explanation">The pipeline starts by generating high-entropy random bits and encoding them into human-readable words. This acts as the master backup.</div>
+                <div class="data-output" id="out-mnemonic"></div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-container" id="step2">
+                <div class="step-title"><span>BIP-32/44</span> Hierarchical Deterministic Private Key</div>
+                <div class="step-explanation">The mnemonic is stretched into a Seed. Using the standard Ethereum path (<code>m/44'/60'/0'/0/0</code>), we deterministically derive a specific 256-bit scalar Private Key.</div>
+                <div class="data-output" id="out-priv"></div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-container" id="step3">
+                <div class="step-title"><span>secp256k1</span> Elliptic-Curve Public Key</div>
+                <div class="step-explanation">Using elliptic-curve multiplication, the private key derives a Public Key (a point on the curve). This allows asymmetric digital signatures. Note the <code>0x04</code> prefix indicating an uncompressed key.</div>
+                <div class="data-output" id="out-pub"></div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-container" id="step4">
+                <div class="step-title"><span>Keccak-256</span> Hashing</div>
+                <div class="step-explanation">The public key (without the prefix) is hashed using Keccak-256. The Ethereum address is formed by taking only the <span class="hl">last 20 bytes (40 characters)</span> of this hash.</div>
+                <div class="data-output" id="out-hash"></div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step-container" id="step5">
+                <div class="step-title"><span>EIP-55</span> Mixed-case Checksum Address</div>
+                <div class="step-explanation">To prevent typos, the raw address is hashed again. Characters are capitalized if their corresponding hash nibble is ≥ 8. This creates the final, safe-to-use Ethereum address.</div>
+                <div class="data-output" id="out-eip55" style="color: #fff; font-size: 1.1rem; border-color: var(--accent-red); background: rgba(230, 57, 70, 0.2); box-shadow: 0 0 15px rgba(230,57,70,0.2);"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- THEORY SECTIONS -->
+    <section>
+        <h2>Cryptographic Distinctions</h2>
+        <div class="grid-2">
+            <div class="card card-red">
+                <h3>Key Generation vs. Key Derivation</h3>
+                <p><strong>Generation</strong> creates original randomness (entropy) from scratch using a Random Number Generator. <br><br><strong>Derivation</strong> (like BIP-32) applies deterministic math to compute child keys from an existing parent seed. Derivation is predictable; generation is not.</p>
+            </div>
+            <div class="card card-red">
+                <h3>Public-Key Cryptography vs. Hashing</h3>
+                <p><strong>Public-Key Crypto</strong> (secp256k1) is asymmetric: it creates a mathematically linked pair of keys used for proving identity via signatures. <br><br><strong>Hashing</strong> (Keccak-256) is a one-way street: it scrambles data into a fixed-length footprint with no trapdoor to reverse it.</p>
+            </div>
+            <div class="card card-red">
+                <h3>Checksums vs. Encoding</h3>
+                <p><strong>Encoding</strong> simply translates data formats (e.g., binary to Hexadecimal) for computer systems. <br><br><strong>Checksums</strong> (EIP-55) add mathematical redundancy to the encoded string, allowing software to detect if a human mistyped a character.</p>
+            </div>
+            <div class="card card-red">
+                <h3>Keccak vs. SHA-3 Standard</h3>
+                <p>Ethereum uses <code>Keccak-256</code>, which is the original algorithm that won the NIST competition. However, when NIST standardized it as <code>SHA3-256</code> in 2015, they changed the padding parameters. Consequently, they are mathematically distinct and produce different hashes for the same input.</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>The Components of the Pipeline</h2>
+        <table>
+            <tr>
+                <th>Standard</th>
+                <th>Role & Purpose in the System</th>
+            </tr>
+            <tr>
+                <td><span class="hl">BIP-39</span></td>
+                <td>Converts high-entropy data into a mnemonic sentence and stretches it into a 512-bit seed using PBKDF2. Essential for user-friendly backups.</td>
+            </tr>
+            <tr>
+                <td><span class="hl">BIP-32 / BIP-44</span></td>
+                <td><strong>BIP-32:</strong> Defines the math for Hierarchical Deterministic (HD) wallets (tree structure).<br><strong>BIP-44:</strong> Standardizes the paths (e.g., coin type, account number) so different wallets can restore the same keys.</td>
+            </tr>
+            <tr>
+                <td><span class="hl">secp256k1</span></td>
+                <td>The specific elliptic curve used for public-key cryptography. It derives the public key and is responsible for validating digital signatures.</td>
+            </tr>
+            <tr>
+                <td><span class="hl">Keccak-256</span></td>
+                <td>The hashing function used to obfuscate and compress the public key into an address, providing quantum resistance prior to the first transaction.</td>
+            </tr>
+            <tr>
+                <td><span class="hl">EIP-55</span></td>
+                <td>An application-layer standard that introduces a checksum via mixed-case capitalization (e.g., <code>0xabC...</code> vs <code>0xabc...</code>) to prevent accidental loss of funds.</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>Historical Context & Statistical Properties</h2>
+        
+        <div class="grid-2">
+            <!-- Timeline -->
+            <div class="card">
+                <h3>Chronological Timeline</h3>
+                <ul style="padding-left: 15px; color: var(--text-muted);">
+                    <li><strong style="color: #fff;">1977 | RSA:</strong> Introduction of public-key cryptography.</li>
+                    <li><strong style="color: #fff;">2001 | SHA-2:</strong> Standardized by NIST. (Used in BIP-39 seed generation).</li>
+                    <li><strong style="color: #fff;">2012 | BIP-32:</strong> HD wallets eliminate the need to backup every single key.</li>
+                    <li><strong style="color: #fff;">2013 | BIP-39:</strong> Mnemonic codes revolutionize wallet recovery.</li>
+                    <li><strong style="color: #fff;">2014 | BIP-44:</strong> Multi-account HD paths standardized.</li>
+                    <li><strong style="color: #fff;">2015 | SHA-3:</strong> NIST standardizes the Keccak design (with altered padding).</li>
+                    <li><strong style="color: #fff;">2016 | EIP-55:</strong> Vitalik Buterin introduces Ethereum checksums.</li>
+                </ul>
+            </div>
+
+            <!-- Stats -->
+            <div class="card">
+                <h3>Statistical Defense</h3>
+                <ul style="padding-left: 15px; color: var(--text-muted);">
+                    <li><strong style="color: var(--accent-red);">Entropy:</strong> Generating a seed collision requires guessing 256 random bits. The probability is 1 / 2<sup>256</sup>, ensuring absolute uniformity.</li>
+                    <li><strong style="color: var(--accent-red);">Avalanche Effect:</strong> Keccak-256 guarantees that changing a single input bit statistically flips 50% of the output bits, making hashes unpredictable.</li>
+                    <li><strong style="color: var(--accent-red);">Collision Resistance:</strong> An Ethereum address is 160 bits. According to the Birthday Paradox, it takes 2<sup>80</sup> operations to find two keys yielding the same address—computationally impossible today.</li>
+                    <li><strong style="color: var(--accent-red);">EIP-55 Efficacy:</strong> The checksum validates 15 alphabetic characters on average. The statistical probability of a mistyped address randomly passing validation is roughly 0.024%.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    async function runPipeline() {
+        const btn = document.getElementById('startBtn');
+        btn.innerText = "Processing Pipeline...";
+        btn.disabled = true;
+
+        for(let i=1; i<=5; i++) {
+            document.getElementById(`step${i}`).style.display = 'none';
+        }
+
+        try {
+            const wallet = ethers.Wallet.createRandom();
+            
+            document.getElementById('out-mnemonic').innerText = wallet.mnemonic.phrase;
+            document.getElementById('step1').style.display = 'block';
+            await delay(800); 
+
+            document.getElementById('out-priv').innerText = wallet.privateKey;
+            document.getElementById('step2').style.display = 'block';
+            await delay(800);
+
+            const publicKey = ethers.utils.computePublicKey(wallet.privateKey, false);
+            document.getElementById('out-pub').innerText = publicKey;
+            document.getElementById('step3').style.display = 'block';
+            await delay(800);
+
+            const pubKeyNoPrefix = '0x' + publicKey.slice(4);
+            const keccakHash = ethers.utils.keccak256(pubKeyNoPrefix);
+            const prefix = keccakHash.slice(0, 26);
+            const suffix = keccakHash.slice(26);
+            document.getElementById('out-hash').innerHTML = `${prefix}<span style="background: rgba(230,57,70,0.4); color: #fff; padding: 0 4px; box-shadow: 0 0 8px rgba(230,57,70,0.5);">${suffix}</span>`;
+            document.getElementById('step4').style.display = 'block';
+            await delay(800);
+
+            document.getElementById('out-eip55').innerText = wallet.address;
+            document.getElementById('step5').style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            alert("Error running the cryptographic pipeline.");
+        } finally {
+            btn.innerText = "Generate New Wallet";
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
