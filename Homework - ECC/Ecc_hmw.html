@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECC Scalar Multiplication - Toy App</title>
+    <style>
+        :root {
+            --primary: #8b0000; /* Dark Red / Bordeaux */
+            --primary-hover: #5c0000;
+            --accent: #e74c3c;
+            --bg: #fdf2f2;
+            --text-main: #333333;
+            --box-bg: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 { 
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary); 
+            padding-bottom: 5px; 
+            margin-top: 30px;
+        }
+        h3 { color: var(--primary); margin-bottom: 10px; }
+        
+        /* Preface Box */
+        .intro-box {
+            background-color: var(--box-bg);
+            padding: 20px 25px;
+            border-left: 5px solid var(--primary);
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(139, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        .intro-box p { margin: 10px 0; }
+        
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .controls {
+            background: var(--box-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(139, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+        .visual-container {
+            background: var(--box-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(139, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border: 1px solid #e0baba;
+            background-color: #fff;
+            margin-top: 10px;
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .log-box {
+            background: #2b0000;
+            color: #ff9d9d;
+            font-family: monospace;
+            padding: 15px;
+            height: 150px;
+            overflow-y: auto;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .stats-box {
+            background: var(--box-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(139, 0, 0, 0.1);
+        }
+        .stats-btn {
+            width: auto;
+            padding: 10px 25px;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: #fdf2f2;
+            padding: 15px;
+            border: 1px solid #e0baba;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #5c0000;
+        }
+        .stat-card strong { color: var(--primary); font-family: 'Segoe UI', sans-serif;}
+        #statsOutput { display: none; }
+        .discussion-section { margin-top: 30px; }       
+    </style>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+
+    <h1>Elliptic-Curve Scalar Multiplication</h1>
+    
+    <!-- PREFACE SECTION -->
+    <div class="intro-box">
+        <h3>Introduction</h3>
+        <p>This web application explores the foundational mechanics of <strong>Public-Key Cryptography</strong> using Elliptic Curve Cryptography (ECC), similar to the <em>secp256k1</em> curve used in Ethereum and Bitcoin.</p>
+        <p>Instead of unimaginably large numbers, we are using a "toy" finite field modulo 17 ($p = 17$). The curve is defined by the equation <strong>$y^2 \equiv x^3 + 7 \pmod{17}$</strong>.</p>
+        <p><strong>The Core Concept:</strong> A private key ($k$) is simply a scalar integer. The public key ($Q$) is a point on the curve generated by adding a publicly known Base Point ($G$) to itself $k$ times ($Q = kG$). While computing $Q$ from $k$ is computationally easy (using point addition and doubling), determining $k$ from $Q$ relies on the <em>Elliptic Curve Discrete Logarithm Problem (ECDLP)</em>, which is practically unsolvable for large fields.</p>
+    </div>
+    
+    <!-- MAIN INTERACTIVE DASHBOARD -->
+    <div class="dashboard">
+        <div class="controls">
+            <h3>Algorithm Parameters</h3>
+            <label for="basePointSelect"><strong>Select Base Point (G):</strong></label>
+            <select id="basePointSelect" onchange="resetGrid()"></select>
+
+            <label for="privKey"><strong>Private Key (k):</strong></label>
+            <input type="number" id="privKey" value="6" min="1" max="50">
+            
+            <button onclick="runVisualAlgo()">Generate Public Key (Slow Motion)</button>
+            
+            <div class="log-box" id="logBox">Waiting for input...</div>
+            <h3 id="finalResult" style="color: var(--primary); text-align: center; margin-top: 15px;"></h3>
+        </div>
+
+        <div class="visual-container">
+            <h3>Visual Representation</h3>
+            <canvas id="eccCanvas" width="340" height="340"></canvas>
+            <small style="margin-top:10px; color:#777;">Gray dots: Valid points. Red path: Multiplicative jumps.</small>
+        </div>
+    </div>
+
+    <!-- STATISTICAL EXPLORATION -->
+    <div class="stats-box">
+        <h2>Statistical Exploration & Analytics</h2>
+        <p>Select a Base Point $G$ above, then compute its cyclic group properties and statistical behavior.</p>
+        <button class="stats-btn" onclick="runStats()">Compute Stats for Current Base Point</button>
+        
+        <div id="statsOutput">
+            <div class="stats-grid" id="statsGrid">
+                <!-- Dynamically populated stat cards will go here -->
+            </div>
+        </div>
+        
+        <div class="discussion-section">
+            <h3>Cryptographic Properties</h3>
+            <ul>
+                <li><strong>Distribution & Uniformity:</strong> The generated points are not uniformly distributed across all integer coordinates. They are strictly confined to values satisfying the curve equation (where $x^3+7$ is a quadratic residue modulo 17). However, within this restricted set, the sequence of jumps $G, 2G, 3G...$ scatters points pseudo-randomly across the valid geometric space.</li>
+                <li><strong>Bit Distribution:</strong> Even in this toy model, analyzing the binary representation of the generated coordinates shows a relatively balanced mix of 0s and 1s, preventing attackers from guessing coordinate regions based on simple bit-biases.</li>
+                <li><strong>Avalanche-like Behavior & Correlations:</strong> Changing the private key $k$ by just $1$ causes the resulting point coordinates to jump wildly across the modulo grid. Statistical analysis (Pearson correlation) shows near-zero linear correlation between the input $k$ and the output coordinates $(X, Y)$. This lack of predictable geometric proximity or smooth gradient is the essence of the ECDLP's difficulty.</li>
+                <li><strong>One-Way Function vs. Hash Function:</strong>
+                    <ul>
+                        <li><em>Cryptographic Hash Functions (e.g., SHA-256):</em> Designed to completely destroy algebraic structure. They require a strict avalanche effect (a 1-bit input change flips ~50% of output bits) to prevent pre-image attacks.</li>
+                        <li><em>ECC One-Way Functions:</em> Rely on the discrete logarithm problem. Unlike hashes, ECC <strong>must preserve an underlying algebraic group structure</strong> (e.g., $kG + jG = (k+j)G$). This homomorphic property allows for digital signatures (ECDSA) and key exchanges (Diffie-Hellman). ECC is not a hash function; it is a structured one-way function where reversing the path without the discrete steps is infeasible due to the chaotic modulo wrapping, not the destruction of algebra.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- MATHEMATICAL CORE ---
+        const p = 17; 
+        const a = 0;  
+        const b = 7;  
+
+        function mod(n, m) {
+            return ((n % m) + m) % m;
+        }
+
+        function modInverse(n, m) {
+            n = mod(n, m);
+            for (let i = 1; i < m; i++) {
+                if (mod(n * i, m) === 1) return i;
+            }
+            return null; 
+        }
+
+        function pointAdd(P, Q) {
+            if (P === null) return Q; 
+            if (Q === null) return P; 
+
+            if (P.x === Q.x && P.y === mod(-Q.y, p)) return null; 
+
+            let m; 
+            if (P.x === Q.x && P.y === Q.y) {
+                let num = mod(3 * P.x * P.x + a, p);
+                let den = modInverse(2 * P.y, p);
+                m = mod(num * den, p);
+            } else {
+                let num = mod(Q.y - P.y, p);
+                let den = modInverse(Q.x - P.x, p);
+                m = mod(num * den, p);
+            }
+
+            let x3 = mod(m * m - P.x - Q.x, p);
+            let y3 = mod(m * (P.x - x3) - P.y, p);
+
+            return {x: x3, y: y3};
+        }
+
+        // Calculate all valid points
+        function getValidPoints() {
+            let points = [];
+            for (let x = 0; x < p; x++) {
+                let rightSide = mod(x * x * x + b, p);
+                for (let y = 0; y < p; y++) {
+                    let leftSide = mod(y * y, p);
+                    if (leftSide === rightSide) {
+                        points.push({x, y});
+                    }
+                }
+            }
+            return points;
+        }
+        const validPoints = getValidPoints();
+
+        // --- UI INITIALIZATION ---
+        function initDropdown() {
+            const select = document.getElementById('basePointSelect');
+            validPoints.forEach(pt => {
+                let opt = document.createElement('option');
+                opt.value = JSON.stringify(pt);
+                opt.text = `(${pt.x}, ${pt.y})`;
+                // Set (1,5) as default if it exists
+                if(pt.x === 1 && pt.y === 5) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function getSelectedG() {
+            return JSON.parse(document.getElementById('basePointSelect').value);
+        }
+
+        // --- VISUALIZATION CORE ---
+        const canvas = document.getElementById('eccCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 20;
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#fdf2f2';
+            for (let i = 0; i <= p; i++) {
+                ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, p * cellSize); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(p * cellSize, i * cellSize); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#d3a6a6';
+            validPoints.forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt.x * cellSize + cellSize/2, (p - 1 - pt.y) * cellSize + cellSize/2, 3, 0, 2*Math.PI);
+                ctx.fill();
+            });
+        }
+
+        function resetGrid() {
+            drawGrid();
+            document.getElementById('logBox').innerHTML = 'Waiting for input...';
+            document.getElementById('finalResult').innerHTML = '';
+        }
+
+        function drawPoint(pt, color, label) {
+            if (!pt) return;
+            let cx = pt.x * cellSize + cellSize/2;
+            let cy = (p - 1 - pt.y) * cellSize + cellSize/2;
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 6, 0, 2*Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, cx + 8, cy - 8);
+        }
+
+        function drawLine(pt1, pt2) {
+            if (!pt1 || !pt2) return;
+            let cx1 = pt1.x * cellSize + cellSize/2;
+            let cy1 = (p - 1 - pt1.y) * cellSize + cellSize/2;
+            let cx2 = pt2.x * cellSize + cellSize/2;
+            let cy2 = (p - 1 - pt2.y) * cellSize + cellSize/2;
+
+            ctx.strokeStyle = 'rgba(231, 76, 60, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx1, cy1);
+            ctx.lineTo(cx2, cy2);
+            ctx.stroke();
+        }
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        function logMsg(msg) {
+            const logBox = document.getElementById('logBox');
+            logBox.innerHTML += msg + '<br>';
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // --- ALGORITHMS ---
+        async function runVisualAlgo() {
+            const k = parseInt(document.getElementById('privKey').value);
+            const G = getSelectedG();
+            const logBox = document.getElementById('logBox');
+            const finalResult = document.getElementById('finalResult');
+            
+            logBox.innerHTML = '';
+            finalResult.innerHTML = '';
+            drawGrid();
+
+            if (isNaN(k) || k < 1) {
+                logMsg("Please enter a valid private key k > 0");
+                return;
+            }
+
+            logMsg(`Starting scalar multiplication for k = ${k}`);
+            logMsg(`Base Point G = (${G.x}, ${G.y})`);
+
+            let currentPoint = G;
+            drawPoint(currentPoint, '#8b0000', 'G');
+            await sleep(800);
+
+            for (let i = 2; i <= k; i++) {
+                let nextPoint = pointAdd(currentPoint, G);
+                
+                if (nextPoint === null) {
+                    logMsg(`${i}G = Point at Infinity (O)`);
+                    currentPoint = nextPoint;
+                    break;
+                }
+
+                drawLine(currentPoint, nextPoint);
+                currentPoint = nextPoint;
+                
+                logMsg(`${i}G = (${currentPoint.x}, ${currentPoint.y})`);
+                drawPoint(currentPoint, '#e74c3c', `${i}G`);
+                
+                await sleep(800);
+            }
+
+            if (currentPoint) {
+                drawPoint(currentPoint, '#2ecc71', `Q=${k}G`);
+                finalResult.innerHTML = `TOY PUBLIC KEY: (${currentPoint.x}, ${currentPoint.y})`;
+            } else {
+                finalResult.innerHTML = `TOY PUBLIC KEY: Point at Infinity`;
+            }
+        }
+
+        // Stats Math Helpers
+        function getPearsonCorrelation(x, y) {
+            let n = x.length;
+            let sumX = x.reduce((a, b) => a + b, 0);
+            let sumY = y.reduce((a, b) => a + b, 0);
+            let sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+            let sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+            let sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
+            
+            let num = (n * sumXY) - (sumX * sumY);
+            let den = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+            if (den === 0) return 0;
+            return (num / den).toFixed(4);
+        }
+
+        function runStats() {
+            const G = getSelectedG();
+            document.getElementById('statsOutput').style.display = 'block';
+            
+            let current = G;
+            let i = 1;
+            let pointsData = [];
+            
+            // Loop until infinity to find group order
+            while(current !== null && i <= 50) {
+                pointsData.push({k: i, x: current.x, y: current.y});
+                current = pointAdd(current, G);
+                i++;
+            }
+            let groupOrder = i;
+
+            // 1. Frequencies
+            let xFreq = {}, yFreq = {};
+            // 2. Correlation Arrays
+            let kArr = [], xArr = [], yArr = [];
+            // 3. Avalanche (Avg Distance)
+            let totalDistance = 0;
+            // 4. Bits (Modulo 17 fits in 5 bits max)
+            let bitCount = { zeros: 0, ones: 0 };
+
+            pointsData.forEach((pt, index) => {
+                xFreq[pt.x] = (xFreq[pt.x] || 0) + 1;
+                yFreq[pt.y] = (yFreq[pt.y] || 0) + 1;
+                kArr.push(pt.k);
+                xArr.push(pt.x);
+                yArr.push(pt.y);
+
+                let binX = pt.x.toString(2).padStart(5, '0');
+                let binY = pt.y.toString(2).padStart(5, '0');
+                for(let char of binX + binY) {
+                    if(char === '1') bitCount.ones++;
+                    else bitCount.zeros++;
+                }
+
+                if (index > 0) {
+                    let prev = pointsData[index-1];
+                    let dist = Math.sqrt(Math.pow(pt.x - prev.x, 2) + Math.pow(pt.y - prev.y, 2));
+                    totalDistance += dist;
+                }
+            });
+
+            let avgAvalancheDist = (pointsData.length > 1) ? (totalDistance / (pointsData.length - 1)).toFixed(2) : 0;
+            let rX = getPearsonCorrelation(kArr, xArr);
+            let rY = getPearsonCorrelation(kArr, yArr);
+            
+            // Format Output
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <strong>Group Structure</strong><br>
+                    Base Point G: (${G.x}, ${G.y})<br>
+                    Order of G: ${groupOrder} (Infinity reached)<br>
+                    Total Valid Sub-group Points: ${pointsData.length}
+                </div>
+                <div class="stat-card">
+                    <strong>Value Frequencies</strong><br>
+                    X-Coords: <span style="font-size:11px">${JSON.stringify(xFreq)}</span><br>
+                    Y-Coords: <span style="font-size:11px">${JSON.stringify(yFreq)}</span>
+                </div>
+                <div class="stat-card">
+                    <strong>Bit Distribution</strong><br>
+                    Analyzed as 5-bit binary strings.<br>
+                    Zeros: ${bitCount.zeros}<br>
+                    Ones: ${bitCount.ones}<br>
+                    Ratio (1/0): ${(bitCount.ones / Math.max(1, bitCount.zeros)).toFixed(2)}
+                </div>
+                <div class="stat-card">
+                    <strong>Correlations (Pearson <i>r</i>)</strong><br>
+                    Input <i>k</i> vs Output <i>X</i>: ${rX}<br>
+                    Input <i>k</i> vs Output <i>Y</i>: ${rY}<br>
+                    <small style="color:#777">Values near 0 indicate non-linear unpredictability.</small>
+                </div>
+                <div class="stat-card">
+                    <strong>Avalanche Behavior</strong><br>
+                    Avg Euclidean jump distance between k and k+1:<br>
+                    <span style="font-size: 18px; color:var(--primary); font-weight:bold;">${avgAvalancheDist} units</span><br>
+                    <small style="color:#777">High avg distance masks proximity.</small>
+                </div>
+            `;
+        }
+
+        // Init
+        window.onload = () => {
+            initDropdown();
+            drawGrid();
+        };
+    </script>
+</body>
+</html>
