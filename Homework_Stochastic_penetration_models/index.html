@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stochastic Penetration Models | Cybersecurity Statistics</title>
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- MathJax for rendering mathematical formulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Custom Cybersecurity Styling -->
+    <style>
+        :root {
+            --bg-color: #050000;
+            --panel-bg: rgba(5, 0, 0, 0.95);
+            --red-accent: #cc0000;
+            --red-bright: #ff0000;
+            --red-border: #550000;
+            --text-main: #ffffff;
+            --text-muted: #ffcccc;
+            --font-sans: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            /* HIGHLY VISIBLE background pattern: Dark red dot matrix over deep black */
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(80,0,0,0.4) 0%, transparent 60%),
+                radial-gradient(circle, rgba(180,0,0,0.3) 2px, transparent 2px);
+            background-size: 100% 100%, 25px 25px;
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 1rem 3rem 1rem;
+            border-bottom: 2px solid var(--red-border);
+            margin-bottom: 2.5rem;
+            background: linear-gradient(180deg, rgba(30,0,0,0.9) 0%, transparent 100%);
+        }
+
+        h1, h2, h3 {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--red-accent);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            /* Subtle dark drop shadow, NO neon glow */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            margin-top: 0.8rem;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px 20px;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--red-border);
+            border-left: 4px solid var(--red-accent);
+            border-radius: 4px;
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(3px);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--red-border);
+            padding-bottom: 0.8rem;
+            color: var(--red-accent);
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Form and Inputs */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            background-color: #110000;
+            color: #ffffff;
+            border: 1px solid var(--red-border);
+            padding: 0.9rem;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            border-radius: 3px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--red-bright);
+        }
+
+        select:disabled, input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        button {
+            background-color: var(--red-accent);
+            color: #ffffff;
+            border: 1px solid #ff0000;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 3px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--red-bright);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 2rem;
+            background-color: #030000;
+            border: 1px solid var(--red-border);
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .chart-title {
+            text-align: center;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        /* Typography improvements */
+        ul { padding-left: 1.5rem; }
+        li { margin-bottom: 0.8rem; }
+        strong { color: var(--red-bright); font-weight: 600; }
+        .highlight { color: var(--red-accent); font-weight: bold; text-decoration: underline; text-decoration-color: var(--red-border); }
+
+        .math-container {
+            background-color: #110000;
+            padding: 1rem;
+            border: 1px solid var(--red-border);
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Stochastic Penetration Models</h1>
+        <div class="subtitle">System Compromise Simulation & Asymptotic Analysis</div>
+    </header>
+
+    <main>
+        <!-- THEORY SECTION -->
+        <section class="panel">
+            <h2>> Theoretical Framework</h2>
+            <p>
+                Consider a network infrastructure comprising <strong>\( n \) systems</strong> under attack by <strong>\( m \) independent attackers</strong>. 
+                We model the penetration process as a stochastic process with independent and identically distributed (i.i.d.) increments \( X_1, X_2, \dots \), where each \( X_i \) represents the penetration score achieved at the \( i \)-th step.
+            </p>
+            
+            <h3>1. Target Models</h3>
+            <ul>
+                <li>
+                    <strong>Bernoulli Model:</strong> \( X_i \in \{0, 1\} \) with \( P(X_i = 1) = p \). 
+                    This asymmetric model dictates that an attacker either successfully compromises a system (1) with probability \( p \), or fails entirely (0).
+                </li>
+                <li>
+                    <strong>Rademacher Model:</strong> \( X_i \in \{-1, +1\} \) with \( P(X_i = +1) = P(X_i = -1) = \frac{1}{2} \). 
+                    This symmetric, zero-mean model represents a balanced scenario, introduced to study pure random walks in security environments (e.g., an attacker gains or loses ground with equal probability).
+                </li>
+            </ul>
+
+            <h3>2. Asymptotic Behavior & Normalizations</h3>
+            <p>For each simulation trajectory, we study the behavior of three primary quantities as \( n \) increases:</p>
+            
+            <ul>
+                <li>
+                    <strong>Total Score (\( S_n = \sum_{i=1}^n X_i \)):</strong> <br>
+                    This is the raw aggregate score. Because the increments are independent, the variance grows linearly with \( n \) (\( \text{Var}(S_n) = n \sigma^2 \)). Consequently, macroscopic trajectories naturally fan out, demonstrating unbounded variance as time approaches infinity.
+                </li>
+                <li>
+                    <strong>Average Score (\( \frac{S_n}{n} = \frac{1}{n} \sum_{i=1}^n X_i \)):</strong> <br>
+                    According to the <span class="highlight">Law of Large Numbers (LLN)</span>, the average score converges in probability to the expected value \( \mu \) (\( p \) for Bernoulli, 0 for Rademacher). The variance shrinks to zero (\( \frac{\sigma^2}{n} \)), indicating that long-term average behavior becomes highly deterministic.
+                    <div class="math-container">
+                        \[ \lim_{n \to \infty} P\left( \left| \frac{S_n}{n} - \mu \right| > \epsilon \right) = 0 \]
+                    </div>
+                </li>
+                <li>
+                    <strong>Normalized Total Score (\( \frac{S_n}{\sqrt{n}} = \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i \)):</strong> <br>
+                    Normalizing by \( \sqrt{n} \) perfectly stabilizes the variance. According to the <span class="highlight">Central Limit Theorem (CLT)</span>, in the Rademacher case (where \( \mu=0, \sigma^2=1 \)), the distribution of this normalized score converges in distribution to a Standard Normal probability curve:
+                    <div class="math-container">
+                        \[ \frac{S_n}{\sqrt{n}} \xrightarrow{d} \mathcal{N}(0,1) \]
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- CYBERSECURITY INTERPRETATION -->
+        <section class="panel">
+            <h2>> Cybersecurity Interpretation</h2>
+            <p>
+                From an operational standpoint, simulating <strong>\( n \) systems</strong> against <strong>\( m \) attackers</strong> yields crucial insights for threat forecasting and risk assessment:
+            </p>
+            <ul>
+                <li><strong>System Size (\( n \)):</strong> As the size of the infrastructure grows, the Law of Large Numbers ensures that the <em>average compromise rate</em> approaches the mathematical probability of a single vulnerability. Localized anomalies are absorbed by the massive scale, allowing defenders to estimate the total compromised baseline with high accuracy.</li>
+                <li><strong>Number of Attackers (\( m \)):</strong> A larger cohort of attackers provides empirical proof of the Central Limit Theorem. While a single attacker's trajectory is completely unpredictable (Total Score divergence), analyzing \( m \) independent attack vectors reveals that the distribution of overall outcomes forms a predictable, mathematical bell curve.</li>
+                <li><strong>Anomaly Detection:</strong> The Normalized Score exposes the magnitude of deviation from the expected attack progression. Because it converges to a Normal distribution, Security Operation Centers (SOCs) can employ standard deviation thresholds (e.g., \( \pm 3\sigma \)) to distinguish between normal stochastic noise and highly coordinated Advanced Persistent Threats (APTs).</li>
+            </ul>
+        </section>
+
+        <!-- SIMULATION CONTROLS -->
+        <section class="panel">
+            <h2>> Simulation Engine</h2>
+            <form id="sim-form" class="controls-grid" onsubmit="event.preventDefault(); runSimulation();">
+                <div class="input-group">
+                    <label for="model-type">Stochastic Model:</label>
+                    <select id="model-type">
+                        <option value="rademacher">Rademacher (Symmetric)</option>
+                        <option value="bernoulli">Bernoulli (Asymmetric)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="n-systems">Systems (n steps):</label>
+                    <input type="number" id="n-systems" value="1000" min="10" max="10000" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="m-attackers">Attackers (m paths):</label>
+                    <input type="number" id="m-attackers" value="200" min="10" max="20000" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="p-prob">Prob. p (Bernoulli only):</label>
+                    <input type="number" id="p-prob" value="0.5" min="0.01" max="0.99" step="0.01" disabled>
+                </div>
+
+                <button type="submit">Execute Simulation</button>
+            </form>
+        </section>
+
+        <!-- VISUALIZATION -->
+        <section class="panel" id="charts-section">
+            <h2>> Telemetry & Analytics</h2>
+            
+            <div class="chart-title">1. Total Score \( S_n \) (Demonstrating variance divergence)</div>
+            <div class="chart-container">
+                <canvas id="chart-total"></canvas>
+            </div>
+
+            <div class="chart-title">2. Average Score \( S_n / n \) (Convergence via LLN)</div>
+            <div class="chart-container">
+                <canvas id="chart-average"></canvas>
+            </div>
+
+            <div class="chart-title">3. Normalized Total Score \( S_n / \sqrt{n} \) (Stabilized Variance)</div>
+            <div class="chart-container">
+                <canvas id="chart-normalized"></canvas>
+            </div>
+
+            <div class="chart-title">4. Final Distribution of \( S_n / \sqrt{n} \) vs Theoretical Normal PDF (CLT)</div>
+            <div class="chart-container">
+                <canvas id="chart-histogram"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Global variables for Chart.js instances
+        let charts = { total: null, average: null, normalized: null, histogram: null };
+
+        // Global Chart.js styling for Dark/Red Mode (NO GRAYS)
+        Chart.defaults.color = '#ffcccc'; // Tinted red text
+        Chart.defaults.font.family = "'Fira Code', monospace";
+        Chart.defaults.scale.grid.color = 'rgba(255, 0, 0, 0.1)';
+        Chart.defaults.scale.grid.borderColor = '#550000';
+
+        // Toggle probability input based on model
+        document.getElementById('model-type').addEventListener('change', function(e) {
+            document.getElementById('p-prob').disabled = (e.target.value === 'rademacher');
+        });
+
+        function runSimulation() {
+            const model = document.getElementById('model-type').value;
+            const n = parseInt(document.getElementById('n-systems').value, 10);
+            const m = parseInt(document.getElementById('m-attackers').value, 10);
+            const p = parseFloat(document.getElementById('p-prob').value);
+
+            // Cap drawn trajectories to maintain browser performance, but simulate ALL for histogram
+            const maxDrawnLines = Math.min(m, 150); 
+            
+            const labels = Array.from({length: n}, (_, i) => i + 1);
+            
+            const datasetsTotal = [];
+            const datasetsAvg = [];
+            const datasetsNorm = [];
+            const finalNormalizedScores = [];
+
+            // Execute stochastic paths - Highly Optimized loop
+            const isBernoulli = (model === 'bernoulli');
+
+            for (let attacker = 0; attacker < m; attacker++) {
+                let currentScore = 0;
+                let pathTotal = [];
+                let pathAvg = [];
+                let pathNorm = [];
+                const drawThisAttacker = attacker < maxDrawnLines;
+
+                for (let step = 1; step <= n; step++) {
+                    let X;
+                    if (isBernoulli) {
+                        X = Math.random() < p ? 1 : 0;
+                    } else {
+                        X = Math.random() < 0.5 ? 1 : -1;
+                    }
+                    currentScore += X;
+                    
+                    if (drawThisAttacker) {
+                        pathTotal.push(currentScore);
+                        pathAvg.push(currentScore / step);
+                        pathNorm.push(currentScore / Math.sqrt(step));
+                    }
+                }
+
+                // Store final normalized score for the histogram across ALL m attackers
+                finalNormalizedScores.push(currentScore / Math.sqrt(n));
+
+                // Save plotting data for the subset of drawn attackers
+                if (drawThisAttacker) {
+                    // Generate strong, PURE RED variations (no white, no orange)
+                    const alpha = Math.max(0.1, 1 - (maxDrawnLines / 200));
+                    // Red channel between 120 and 255. Green and Blue strictly 0.
+                    const r = Math.floor(120 + Math.random() * 135); 
+                    const color = `rgba(${r}, 0, 0, ${alpha})`;
+                    
+                    const commonOptions = {
+                        borderColor: color,
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    };
+                    datasetsTotal.push({ data: pathTotal, ...commonOptions });
+                    datasetsAvg.push({ data: pathAvg, ...commonOptions });
+                    datasetsNorm.push({ data: pathNorm, ...commonOptions });
+                }
+            }
+
+            // Render Trajectory Line Charts
+            drawLineChart('chart-total', labels, datasetsTotal, 'Total Score');
+            drawLineChart('chart-average', labels, datasetsAvg, 'Average Score');
+            drawLineChart('chart-normalized', labels, datasetsNorm, 'Normalized Score');
+
+            // Render Histogram and Theoretical PDF
+            drawHistogram(finalNormalizedScores, model, p, n);
+        }
+
+        function drawLineChart(canvasId, labels, datasets, yAxisTitle) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const key = canvasId.split('-')[1]; // total, average, normalized
+            
+            if (charts[key]) charts[key].destroy();
+
+            charts[key] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: false } // Disabled to ensure high performance
+                    },
+                    animation: false,
+                    interaction: { mode: 'none' },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Systems Penetrated (n)', color: '#ffcccc' },
+                            ticks: { color: '#aa0000', maxTicksLimit: 10 }
+                        },
+                        y: { 
+                            title: { display: true, text: yAxisTitle, color: '#ffcccc' },
+                            ticks: { color: '#aa0000' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawHistogram(data, model, p, n) {
+            // Determine bin count dynamically based on data size
+            const bins = Math.min(60, Math.max(15, Math.floor(Math.sqrt(data.length))));
+            let min = Math.min(...data);
+            let max = Math.max(...data);
+            
+            // Padding if all values are identical (edge cases)
+            if (min === max) { min -= 1; max += 1; }
+            
+            const binWidth = (max - min) / bins;
+            const counts = new Array(bins).fill(0);
+            
+            for (let val of data) {
+                let bin = Math.floor((val - min) / binWidth);
+                if (bin >= bins) bin = bins - 1;
+                counts[bin]++;
+            }
+
+            // Convert raw counts to Probability Density
+            const densities = counts.map(c => c / (data.length * binWidth));
+            const binCenters = Array.from({length: bins}, (_, i) => min + (i + 0.5) * binWidth);
+            const binLabels = binCenters.map(val => val.toFixed(2));
+
+            const datasets = [{
+                type: 'bar',
+                label: 'Empirical Density (Simulated)',
+                data: densities,
+                backgroundColor: 'rgba(255, 0, 0, 0.6)', // Semi-transparent Red bars
+                borderColor: '#ff0000',
+                borderWidth: 1,
+                barPercentage: 1.0,
+                categoryPercentage: 1.0
+            }];
+
+            // Theoretical PDF Overlay (Normal Distribution)
+            let pdfMean, pdfVar;
+            if (model === 'rademacher') {
+                pdfMean = 0;
+                pdfVar = 1;
+            } else {
+                pdfMean = p * Math.sqrt(n);
+                pdfVar = p * (1 - p);
+            }
+            const pdfStdDev = Math.sqrt(pdfVar);
+
+            // Create curve for Theoretical PDF
+            const pdfData = binCenters.map(x => {
+                const exponent = -0.5 * Math.pow((x - pdfMean) / pdfStdDev, 2);
+                return (1 / (pdfStdDev * Math.sqrt(2 * Math.PI))) * Math.exp(exponent);
+            });
+
+            datasets.push({
+                type: 'line',
+                label: `Theoretical Normal PDF N(${pdfMean.toFixed(2)}, ${pdfVar.toFixed(2)})`,
+                data: pdfData,
+                borderColor: '#ffffff', // Crisp pure white for contrast
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.4
+            });
+
+            const ctx = document.getElementById('chart-histogram').getContext('2d');
+            if (charts.histogram) charts.histogram.destroy();
+
+            charts.histogram = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: binLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: true, 
+                            labels: { color: '#ffffff', font: { family: "'Fira Code', monospace" } } 
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Final Value of S_n / √n', color: '#ffcccc' },
+                            ticks: { color: '#aa0000' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Density', color: '#ffcccc' },
+                            ticks: { color: '#aa0000' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize simulation automatically on page load
+        window.onload = function() {
+            runSimulation();
+        };
+    </script>
+</body>
+</html>
