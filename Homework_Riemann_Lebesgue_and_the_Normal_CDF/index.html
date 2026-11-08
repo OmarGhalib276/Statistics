@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riemann, Lebesgue and the Normal CDF · Statistics Homework</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050304; --fg:#e6d3d6; --mut:#b39a9e; --red:#ff2a3a; --red-hi:#ff6b76; --red-deep:#8a0010;
+  --line:rgba(255,42,58,.28); --card:rgba(255,42,58,.045);
+  --mono:'JetBrains Mono','IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --pearl:linear-gradient(100deg,#ff0f26 0%,#ff2a3a 18%,#ff7d88 30%,#ffd3d7 38%,#ff5563 46%,#ff1428 60%,#d4001e 78%,#ff3344 100%);
+  --metal:linear-gradient(180deg,#ff1a2e 0%,#ff3b4c 30%,#d1001c 55%,#ff2a3a 100%);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.68;background:var(--bg);position:relative}
+#rain{position:fixed;inset:0;z-index:-3;width:100%;height:100%;opacity:.3;pointer-events:none}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 90% -10%,rgba(255,42,58,.34),transparent 64%),
+    radial-gradient(760px 540px at -10% 45%,rgba(190,0,24,.22),transparent 62%),
+    radial-gradient(800px 520px at 100% 88%,rgba(190,0,24,.22),transparent 62%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.45;
+  background-image:linear-gradient(rgba(255,42,58,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,42,58,.07) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 78%);mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 78%);
+}
+a{color:var(--red-hi);text-decoration:none} a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+nav{
+  position:sticky;top:0;z-index:20;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;padding:10px 12px;
+  background:rgba(5,3,4,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);box-shadow:0 1px 18px rgba(255,42,58,.14);
+}
+nav a{color:var(--fg);padding:5px 12px;border-radius:999px;font-size:14px;font-weight:500;border:1px solid transparent}
+nav a:hover{border-color:var(--red);text-decoration:none;color:#fff;box-shadow:0 0 14px rgba(255,42,58,.3)}
+header{max-width:1060px;margin:0 auto;padding:78px 24px 46px;position:relative}
+.art{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:330px;height:auto;opacity:.5;z-index:0;pointer-events:none;filter:drop-shadow(0 0 26px rgba(255,42,58,.5))}
+.bitwall{
+  position:absolute;top:0;left:50%;width:100vw;height:100%;transform:translateX(-50%);overflow:hidden;z-index:0;pointer-events:none;font-family:var(--mono);font-size:13px;line-height:1.5;
+  color:rgba(255,42,58,.2);letter-spacing:.12em;white-space:pre;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 45%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 45%,transparent 100%);
+}
+header>*:not(.art):not(.bitwall){position:relative;z-index:1}
+header h1{
+  font-family:var(--mono);font-size:clamp(1.9rem,4.8vw,3.5rem);line-height:1.1;margin:0 auto 24px;max-width:820px;font-weight:700;letter-spacing:-.035em;
+  background:var(--pearl);background-size:140% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000) drop-shadow(0 0 18px rgba(0,0,0,.9)) drop-shadow(0 0 22px rgba(255,20,40,.4));
+}
+header p{max-width:820px;margin:0 auto 12px;text-shadow:0 0 6px #000,0 0 14px #000}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:26px auto 0;max-width:820px}
+.chip{font-family:var(--mono);font-size:12.5px;line-height:1;padding:9px 13px;border-radius:6px;white-space:nowrap;border:1px solid rgba(255,42,58,.3);color:rgba(255,120,130,.75);background:rgba(0,0,0,.45)}
+.chip.f{font-family:'Cambria Math','STIX Two Math','Times New Roman',serif;font-size:15px;color:#ffd0d4;border-color:var(--red);background:rgba(255,42,58,.12);box-shadow:0 0 16px rgba(255,42,58,.3)}
+main{max-width:1060px;margin:0 auto;padding:0 24px 90px}
+section{margin:0 0 40px;padding:44px 0 0}
+section.panel{padding:40px 36px;border-radius:14px;border:1px solid rgba(255,42,58,.5);position:relative;
+  background:linear-gradient(135deg,rgba(190,0,22,.52),rgba(14,0,4,.94) 68%);
+  box-shadow:0 0 0 1px rgba(0,0,0,.6) inset,0 0 36px rgba(255,42,58,.14),0 1px 0 rgba(255,140,150,.35) inset}
+.idx{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--red);opacity:.85;margin-bottom:6px}
+.idx::after{content:" ░▒▓ 0101 1100 0110";color:rgba(255,42,58,.4)}
+h2{font-family:var(--mono);font-size:clamp(1.4rem,3vw,2rem);line-height:1.2;margin:0 0 20px;font-weight:700;letter-spacing:-.02em;
+  background:var(--pearl);background-size:160% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(255,20,40,.45))}
+h3{font-family:var(--mono);font-size:1.02rem;margin:32px 0 10px;font-weight:600;color:#ff8790}
+h3::before{content:"> ";color:var(--red)}
+p{margin:0 0 14px}
+.lead{max-width:800px}
+b{color:#ffc2c7;font-weight:600}
+code,pre{font-family:var(--mono)}
+code{font-size:.88em;background:rgba(255,42,58,.14);color:#ffb3b9;padding:1px 6px;border-radius:4px}
+pre{margin:14px 0 20px;padding:16px 20px;overflow-x:auto;font-size:13.5px;line-height:1.65;color:#f0c9cd;background:#070304;border:1px solid var(--line);border-left:3px solid var(--red);border-radius:8px}
+.eq{margin:14px 0;padding:14px 20px;overflow-x:auto;font-size:1.08rem;text-align:center;color:#f4dfe1;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:8px;font-family:'Cambria Math','STIX Two Math','Times New Roman',serif}
+.eq.key{border-color:var(--red);box-shadow:0 0 0 1px rgba(255,42,58,.3),0 0 30px rgba(255,42,58,.2)}
+i{font-style:italic}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:900px){.g3,.g4,.g5{grid-template-columns:1fr 1fr}.panel{padding:28px 18px}}
+@media(max-width:560px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}.art{width:220px;opacity:.38}}
+.card{padding:16px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.card h4{margin:0 0 6px;font-family:var(--mono);font-size:.98rem;color:#ff8790}
+.stat .k{font-family:var(--mono);font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font-family:var(--mono);font-size:1.18rem;font-weight:500;margin:2px 0;color:#ffd5d8;word-break:break-all}
+.stat .s{font-size:12.5px;color:var(--mut)}
+.stat.hot{border-color:var(--red);box-shadow:0 0 20px rgba(255,42,58,.22)}
+.stat.hot .v{color:#ff6b76;text-shadow:0 0 14px rgba(255,42,58,.55)}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin:12px 0 22px}
+label{display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:12px;color:var(--mut);font-weight:500}
+input,select,button{font:inherit;font-size:15px;color:var(--fg);background:#0a0405;border:1px solid var(--line);border-radius:6px;padding:8px 11px}
+input[type=number]{width:120px} input[type=range]{padding:0;width:200px;accent-color:#ff2a3a}
+select{min-width:260px}
+input:focus,select:focus{border-color:var(--red);box-shadow:0 0 12px rgba(255,42,58,.35);outline:0}
+button{cursor:pointer;font-family:var(--mono);font-weight:700;color:#1a0004;border:1px solid #ff8790;padding:10px 20px;letter-spacing:.02em;
+  background:linear-gradient(180deg,#ff8790 0%,#ff2a3a 45%,#b0001a 55%,#ff3f4e 100%);box-shadow:0 0 18px rgba(255,42,58,.45),0 1px 0 rgba(255,255,255,.5) inset}
+button:hover{filter:brightness(1.12);box-shadow:0 0 26px rgba(255,42,58,.7),0 1px 0 rgba(255,255,255,.5) inset}
+button:disabled{opacity:.5;cursor:wait}
+.tw{overflow-x:auto;margin:12px 0 20px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.5)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 13px;text-align:right;border-bottom:1px solid rgba(255,42,58,.16);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:#ff6b76;font-family:var(--mono);font-weight:600;font-size:11.5px;background:rgba(255,42,58,.09);letter-spacing:.03em}
+td{font-family:var(--mono);font-size:13px;color:#ecd3d6}
+tr:last-child td{border-bottom:0}
+td.bad{color:#ff2a3a;text-shadow:0 0 10px rgba(255,42,58,.6);font-weight:600}
+td.good{color:#ffd5d8}
+td.txt{font-family:var(--sans);white-space:normal;text-align:left;min-width:220px}
+canvas.ch{width:100%;height:330px;display:block;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.6)}
+.cap{font-size:14px;color:var(--mut);margin:8px 0 22px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-family:var(--mono);font-size:12px;color:var(--fg);margin:8px 0 0}
+.legend span::before{content:"";display:inline-block;width:18px;height:3px;margin-right:7px;vertical-align:middle;background:var(--c);box-shadow:0 0 8px var(--c)}
+.note{padding:14px 18px;border-left:3px solid var(--red);background:rgba(255,42,58,.09);border-radius:0 8px 8px 0;margin:16px 0}
+.warn{padding:14px 18px;border:1px solid var(--red);background:rgba(255,42,58,.12);border-radius:8px;margin:16px 0;box-shadow:0 0 20px rgba(255,42,58,.18)}
+.bits{font-family:var(--mono);font-size:12px;color:rgba(255,42,58,.45);white-space:nowrap;overflow:hidden;margin:34px 0 0;letter-spacing:.2em;user-select:none}
+ul.clean{padding-left:20px;margin:0 0 14px} ul.clean li{margin-bottom:6px}
+.refs li{margin-bottom:8px;word-break:break-word}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.2;margin:0 .22em}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 .3em .05em}
+.fr>span:last-child{padding:.05em .3em 0}
+body{overflow-x:clip}
+.busy{opacity:.15;transition:opacity .12s}
+.flash{animation:flashr 1.2s ease-out}
+@keyframes flashr{0%{box-shadow:0 0 0 2px #ff2a3a,0 0 36px rgba(255,42,58,.85)}100%{box-shadow:0 0 0 0 transparent,0 0 0 transparent}}
+.done{font-family:var(--mono);font-size:12.5px;color:#ff6b76;margin-left:4px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+
+<nav aria-label="Sections">
+  <a href="#theory1">Riemann vs Lebesgue</a>
+  <a href="#explorer">Explorer</a>
+  <a href="#convergence">Convergence</a>
+  <a href="#pathological">Pathological</a>
+  <a href="#cdf">Normal CDF</a>
+  <a href="#liouville">Liouville</a>
+  <a href="#methods">Methods</a>
+  <a href="#validation">Validation</a>
+  <a href="#conclusions">Conclusions</a>
+</nav>
+
+<header>
+  <div class="bitwall" id="bitwall" aria-hidden="true"></div>
+  <svg class="art" viewBox="0 0 200 240" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8790"/><stop offset=".45" stop-color="#ff2a3a"/><stop offset=".56" stop-color="#a0001a"/><stop offset="1" stop-color="#ff4655"/></linearGradient></defs>
+    <path d="M100 8 L184 40 V112 C184 170 146 214 100 232 C54 214 16 170 16 112 V40 Z" fill="rgba(255,42,58,.10)" stroke="url(#mg)" stroke-width="4"/>
+    <path d="M100 26 L168 51 V112 C168 160 138 197 100 214 C62 197 32 160 32 112 V51 Z" fill="none" stroke="rgba(255,42,58,.45)" stroke-width="1.5" stroke-dasharray="4 5"/>
+    <rect x="68" y="102" width="64" height="52" rx="7" fill="url(#mg)"/>
+    <path d="M78 102 V86 C78 70 122 70 122 86 V102" fill="none" stroke="url(#mg)" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="100" cy="124" r="7" fill="#1a0004"/><rect x="97" y="126" width="6" height="16" rx="2" fill="#1a0004"/>
+  </svg>
+  <h1>Riemann, Lebesgue and the Normal CDF</h1>
+  <p>An integral can be built by slicing the horizontal axis, as Riemann did, or the vertical axis, as Lebesgue did. This page runs both on the same functions, from smooth curves to ones that break Riemann's method, and compares accuracy, convergence and cost.</p>
+  <p>It then turns to the most important integral in statistics, the area under the bell curve: it has no elementary antiderivative, yet it must be computed constantly, from p-values to intrusion-detection thresholds.</p>
+  <div class="chips" aria-hidden="true">
+    <span class="chip f">∫ <i>f</i> d<i>x</i> ≈ Σ <i>f</i>(<i>x</i><sub><i>i</i></sub>) Δ<i>x</i></span>
+    <span class="chip f">∫ f dμ = ∫<sub>0</sub><sup>∞</sup> μ{f ≥ t} dt</span>
+    <span class="chip f">Φ(<i>x</i>) = <span class="fr"><span>1</span><span>2</span></span> [1 + erf(<span class="fr"><span><i>x</i></span><span>√2</span></span>)]</span>
+  </div>
+</header>
+
+<main>
+
+<section id="theory1">
+  <span class="idx">PART 1 · THEORY</span>
+  <h2>Two ways to build an integral</h2>
+  <p class="lead"><b>Riemann</b> cuts the domain: split [<i>a</i>, <i>b</i>] into <i>N</i> pieces of width Δ<i>x</i> = <span class="fr"><span><i>b</i> − <i>a</i></span><span><i>N</i></span></span>, pick a point ξ<sub><i>i</i></sub> in each (left end or middle) and add the rectangles:</p>
+  <div class="eq key"><i>R</i><sub><i>N</i></sub> = Σ<sub><i>i</i>=0</sub><sup><i>N</i>−1</sup> <i>f</i>(ξ<sub><i>i</i></sub>) · Δ<i>x</i></div>
+  <p class="lead"><b>Lebesgue</b> cuts the range: split the values into <i>B</i> bands <i>y</i><sub><i>j</i></sub> = <i>y</i><sub>min</sub> + <i>jh</i>, and weight each level by the measure μ of its <b>preimage</b> <i>E</i><sub><i>j</i></sub> = {<i>x</i> : <i>y</i><sub><i>j</i></sub> ≤ <i>f</i>(<i>x</i>) &lt; <i>y</i><sub><i>j</i>+1</sub>}:</p>
+  <div class="eq key"><i>L</i><sub><i>B</i></sub> = Σ<sub><i>j</i>=0</sub><sup><i>B</i>−1</sup> <i>y</i><sub><i>j</i></sub> · μ(<i>E</i><sub><i>j</i></sub>)</div>
+  <p>Both sums approximate the same area. Four numerical versions are compared: <b>Riemann left</b> and <b>midpoint</b> (<i>N</i> evaluations of <i>f</i>); <b>Lebesgue with exact preimages</b>, where μ{<i>f</i> ≥ <i>t</i>} is known in closed form or found by bisection; and <b>Lebesgue sampled</b>, which evaluates <i>f</i> at <i>M</i> = <i>N</i> points and estimates each measure by the fraction of points falling in the band (usable on a black-box <i>f</i>, at Riemann's cost).</p>
+</section>
+
+<section id="explorer" class="panel">
+  <span class="idx">PART 1 · EXPLORER</span>
+  <h2>One function, three integrals</h2>
+  <div class="controls">
+    <label>Function<select id="fsel"></select></label>
+    <label>Pieces N (domain) &nbsp; <span id="nval" style="color:#ff6b76"></span><input id="nrange" type="range" min="2" max="12" step="1" value="6"></label>
+    <label>Levels B (range)<input id="bnum" type="number" min="2" max="100000" step="1" value="65"></label>
+    
+  </div>
+  <div class="grid g5" id="cards1"></div>
+  <p class="cap" id="fnote"></p>
+  <div class="tw"><table id="t-eff1"><thead><tr><th>Method</th><th>Estimate</th><th>Abs. error</th><th>Evaluations of f</th><th>Time (ms, mean of 20)</th></tr></thead><tbody></tbody></table></div>
+  <div class="grid g2">
+    <div><h3>Riemann: slices of the domain</h3><canvas id="c-riem" class="ch" aria-label="Midpoint rectangles under the function"></canvas></div>
+    <div><h3>Lebesgue: slabs of the range</h3><canvas id="c-leb" class="ch" aria-label="Horizontal layers under the function"></canvas></div>
+  </div>
+</section>
+
+<section id="convergence">
+  <span class="idx">PART 1 · CONVERGENCE</span>
+  <h2>Convergence and efficiency</h2>
+  <p class="lead">The pieces double repeatedly (<i>N</i> = <i>B</i> = 2<sup><i>k</i></sup> + 1, odd so the jump at 0.5 never sits on a grid point) and the error is recorded for the function selected above (it updates when you change the function).</p>
+  <canvas id="c-conv" class="ch" aria-label="Error against number of pieces"></canvas>
+  <div class="legend"><span style="--c:#ff8790">Riemann left</span><span style="--c:#ff2a3a">Riemann midpoint</span><span style="--c:#ffd3d7">Lebesgue exact</span><span style="--c:#b0001a">Lebesgue sampled</span></div>
+  <p class="cap">Log–log axes: a line of slope −<i>p</i> means error ∝ <i>N</i><sup>−<i>p</i></sup>.</p>
+  <h3>All functions</h3>
+  <p>Errors at <i>N</i> = <i>B</i> = 1025 and observed order <i>p</i> between <i>N</i> = 1025 and 16385.</p>
+  <div class="tw"><table id="t-all"><thead><tr><th>Function</th><th>Exact</th><th>R-left err</th><th>R-mid err</th><th>L-exact err</th><th>L-sampled err</th><th>p R-left</th><th>p R-mid</th><th>p L-exact</th><th>p L-sampled</th></tr></thead><tbody></tbody></table></div>
+  <div class="note">Smooth functions: midpoint order 2, left rule order 1. The Lebesgue sum is order 1 for every bounded function, since its error is set by the level spacing, not by smoothness. Jumps push every method to order 1, and the singularity of 1/√<i>x</i> to order ½. For all Riemann-integrable functions the four methods converge to the same value. (The order 2 of the sampled sum on the two-value step is a coincidence: with <i>M</i> = <i>B</i> the sampling bias cancels the level bias.)</div>
+</section>
+
+<section id="pathological" class="panel">
+  <span class="idx">PART 1 · PATHOLOGICAL CASES</span>
+  <h2>Where the two views disagree</h2>
+  <p><b>Dirichlet</b> (1 on rationals, 0 on irrationals). Every interval holds both kinds of numbers, so every upper Darboux sum is 1 and every lower sum is 0: <i>f</i> is <b>not Riemann-integrable</b>, and a Riemann sum can be anything between 0 and 1 depending on the tags. For Lebesgue, the preimage of 1 is ℚ ∩ [0, 1], countable, hence of measure 0 (cover the <i>k</i>-th point with an interval of length ε/2<sup><i>k</i></sup>): the integral is <b>0</b>. On a computer the Lebesgue view cannot even be sampled, because every floating-point number is rational.</p>
+  <div class="tw"><table id="t-dir"><thead><tr><th>Partition size N</th><th>Riemann sum, rational tags</th><th>Riemann sum, irrational tags</th><th>Upper Darboux</th><th>Lower Darboux</th></tr></thead><tbody></tbody></table></div>
+  <p><b>Thomae</b> (1/<i>q</i> at <i>p</i>/<i>q</i> in lowest terms, 0 at irrationals) is discontinuous only on ℚ, a null set, so it <b>is Riemann-integrable</b> with integral 0. On <i>N</i> equal pieces the upper Darboux sum is exact: on each piece the supremum is 1/<i>q</i><sub>min</sub>, the smallest denominator inside it; the lower sum is 0.</p>
+  <div class="tw"><table id="t-thom"><thead><tr><th>N</th><th>Upper sum U<sub>N</sub></th><th>Lower sum</th><th>U<sub>N</sub> · √N</th></tr></thead><tbody></tbody></table></div>
+  <p>The upper sums fall to 0 (roughly like <i>N</i><sup>−1/2</sup> in this range), so Riemann's limit is 0. Lebesgue sees it immediately: {<i>f</i> ≥ <i>t</i>} only contains fractions with denominator at most 1/<i>t</i>, a finite set of measure 0. Here the theories agree, but Riemann needs a limit of partitions to get there.</p>
+</section>
+
+<section id="cdf">
+  <span class="idx">PART 2 · DEFINITION</span>
+  <h2>The standard normal CDF</h2>
+  <div class="eq key">Φ(<i>x</i>) = P(<i>Z</i> ≤ <i>x</i>) = <span class="fr"><span>1</span><span>√(2π)</span></span> ∫<sub>−∞</sub><sup><i>x</i></sup> <i>e</i><sup>−<i>t</i>²/2</sup> d<i>t</i></div>
+  <p>By symmetry Φ(0) = <span class="fr"><span>1</span><span>2</span></span> and Φ(−<i>x</i>) = 1 − Φ(<i>x</i>), so <i>x</i> ≥ 0 is enough. The substitution <i>t</i> = √2 <i>s</i> on the integral from 0 to <i>x</i> gives the error function:</p>
+  <div class="eq">erf(<i>z</i>) = <span class="fr"><span>2</span><span>√π</span></span> ∫<sub>0</sub><sup><i>z</i></sup> <i>e</i><sup>−<i>s</i>²</sup> d<i>s</i> &emsp;⟹&emsp; <b style="color:#ff6b76">Φ(<i>x</i>) = <span class="fr"><span>1</span><span>2</span></span> [ 1 + erf( <span class="fr"><span><i>x</i></span><span>√2</span></span> ) ]</b></div>
+</section>
+
+<section id="liouville" class="panel">
+  <span class="idx">PART 2 · LIOUVILLE</span>
+  <h2>Why no elementary formula exists</h2>
+  <p><b>Elementary</b> functions are those built from rational functions, exponentials and logarithms by finitely many sums, products, compositions and inverses. Liouville's theorem (in Rosenlicht's form): for rational <i>f</i>, <i>g</i> with <i>g</i> not constant, ∫ <i>f</i> <i>e</i><sup><i>g</i></sup> d<i>x</i> is elementary <b>if and only if</b> there is a rational <i>R</i> with <i>R</i>′ + <i>g</i>′<i>R</i> = <i>f</i>, and then it equals <i>R</i> <i>e</i><sup><i>g</i></sup>.</p>
+  <p>For the bell curve <i>f</i> = 1 and <i>g</i> = −<i>x</i>²/2, so we would need a rational <i>R</i> with <i>R</i>′ − <i>xR</i> = 1. A pole of order <i>k</i> of <i>R</i> gives a pole of order <i>k</i> + 1 in <i>R</i>′ that <i>xR</i> cannot cancel, so <i>R</i> is a polynomial; but a polynomial of degree <i>d</i> gives <i>R</i>′ − <i>xR</i> of degree <i>d</i> + 1 ≥ 1 (and <i>R</i> = 0 gives 0), never the constant 1. Hence ∫ <i>e</i><sup>−<i>x</i>²/2</sup> d<i>x</i>, and with it Φ and erf, is not elementary. This does not make Φ undefined: it is smooth and well defined, it just has no finite formula in elementary functions.</p>
+  <p>Naming the integral erf makes Φ(<i>x</i>) = ½[1 + erf(<i>x</i>/√2)] <b>exact</b>, and erf has a rich theory (odd, entire, erf′(<i>z</i>) = <span class="fr"><span>2</span><span>√π</span></span> <i>e</i><sup>−<i>z</i>²</sup>, Taylor series valid everywhere). But a name is not a number: to know that Φ(1.5) = 0.93319… an algorithm must still produce the digits, via an integral, a series, a continued fraction or a tuned approximation. That is why numerical methods remain necessary.</p>
+</section>
+
+<section id="methods">
+  <span class="idx">PART 2 · METHODS</span>
+  <h2>Five ways to compute Φ(x)</h2>
+  <div class="grid g2">
+    <div class="card"><h4>1 · Trapezoidal rule</h4>
+      <p>Φ(<i>x</i>) = <span class="fr"><span>1</span><span>2</span></span> + ∫<sub>0</sub><sup><i>x</i></sup> φ(<i>t</i>) d<i>t</i> with <i>N</i> trapezoids. Error ∝ <i>h</i>². Cost <i>N</i> + 1 exponentials.</p></div>
+    <div class="card"><h4>2 · Simpson's rule</h4>
+      <p>The same integral with parabolic caps (weights 1, 4, 2, …, 4, 1). Error ∝ <i>h</i>⁴. Cost <i>N</i> + 1.</p></div>
+    <div class="card"><h4>3 · Maclaurin series of erf</h4>
+      <div class="eq" style="margin:6px 0">erf(<i>z</i>) = <span class="fr"><span>2</span><span>√π</span></span> Σ<sub><i>k</i>≥0</sub> <span class="fr"><span>(−1)<sup><i>k</i></sup> <i>z</i><sup>2<i>k</i>+1</sup></span><span><i>k</i>!(2<i>k</i> + 1)</span></span>, &nbsp; <i>z</i> = <span class="fr"><span><i>x</i></span><span>√2</span></span></div>
+      <p>Converges everywhere, but for large <i>z</i> the alternating terms cancel almost every digit. Cost <i>K</i> terms.</p></div>
+    <div class="card"><h4>4 · Abramowitz–Stegun 7.1.26</h4>
+      <p>erf(<i>z</i>) ≈ 1 − (<i>a</i><sub>1</sub><i>t</i> + … + <i>a</i><sub>5</sub><i>t</i><sup>5</sup>) <i>e</i><sup>−<i>z</i>²</sup>, <i>t</i> = <span class="fr"><span>1</span><span>1 + 0.3275911<i>z</i></span></span>. Error below 1.5·10<sup>−7</sup>: one exponential, but a hard ceiling.</p></div>
+    <div class="card" style="grid-column:1/-1"><h4>5 · Hybrid: positive series + continued fraction</h4>
+      <p>For <i>x</i> &lt; 3 the series with all terms positive (no cancellation); for <i>x</i> ≥ 3 the tail directly from the Mills-ratio continued fraction, depth 150, then symmetry:</p>
+      <div class="eq" style="margin:6px 0">erf(<i>z</i>) = <span class="fr"><span>2</span><span>√π</span></span> <i>e</i><sup>−<i>z</i>²</sup> Σ<sub><i>k</i>≥0</sub> <span class="fr"><span>2<sup><i>k</i></sup> <i>z</i><sup>2<i>k</i>+1</sup></span><span>1·3·5⋯(2<i>k</i> + 1)</span></span> &emsp;&emsp; 1 − Φ(<i>x</i>) = <span class="fr"><span>φ(<i>x</i>)</span><span><i>x</i> + <span class="fr"><span>1</span><span><i>x</i> + <span class="fr"><span>2</span><span><i>x</i> + <span class="fr"><span>3</span><span><i>x</i> + …</span></span></span></span></span></span></span></span></div>
+      <p>Computing a tail as 1 − Φ would subtract two nearly equal numbers and lose the quantity wanted; this is the idea behind library implementations.</p></div>
+  </div>
+</section>
+
+<section id="validation" class="panel">
+  <span class="idx">PART 2 · VALIDATION</span>
+  <h2>Validation against published values</h2>
+  <p class="lead">References: Φ(<i>x</i>) at <i>x</i> = ±1, …, ±6 and 0, built from the high-precision digits of erf(1/√2), erf(√2), erf(3/√2) and of the tails beyond 3 to 6 standard deviations in the OEIS (<a href="https://oeis.org/A178647">A178647</a>, <a href="https://oeis.org/A110894">A110894</a>, <a href="https://oeis.org/A270712">A270712</a>, <a href="https://oeis.org/A239384">A239384</a>–<a href="https://oeis.org/A239387">A239387</a>), consistent with P(|<i>Z</i>| ≤ <i>k</i>) = erf(<i>k</i>/√2) on <a href="https://mathworld.wolfram.com/68-95-997Rule.html">MathWorld</a>.</p>
+  <h3>Accuracy at several points</h3>
+  <p>Trapezoid <i>N</i> = 1000, Simpson <i>N</i> = 100, alternating series <i>K</i> = 40. Relative errors, which is what matters in the tails (an absolute error of 10<sup>−12</sup> ruins Φ(−6) ≈ 10<sup>−9</sup>); values above 10<sup>−8</sup> are highlighted.</p>
+  <div class="tw"><table id="t-bench"><thead><tr><th>x</th><th>Reference Φ(x)</th><th>Trapezoid</th><th>Simpson</th><th>Alt. series</th><th>A&amp;S 7.1.26</th><th>Hybrid</th></tr></thead><tbody></tbody></table></div>
+  <h3>Convergence at x = 2</h3>
+  <div class="grid g2">
+    <div><canvas id="c-cn" class="ch" aria-label="Error against N for trapezoid and Simpson"></canvas>
+      <div class="legend"><span style="--c:#ff8790">Trapezoid</span><span style="--c:#ffd3d7">Simpson</span><span style="--c:#7a0010">A&amp;S ceiling 1.5e-7</span></div>
+      <p class="cap">Error against subintervals: slopes −2 and −4, then a rounding floor.</p></div>
+    <div><canvas id="c-ck" class="ch" aria-label="Error against number of series terms"></canvas>
+      <div class="legend"><span style="--c:#ff2a3a">Alternating series</span><span style="--c:#ffd3d7">Positive series</span></div>
+      <p class="cap">Error against terms: the alternating series stalls at a cancellation floor.</p></div>
+  </div>
+  <h3>Efficiency</h3>
+  <div class="controls"><button id="run9" type="button">Re-measure timings</button></div>
+  <div class="tw"><table id="t-effc"><thead><tr><th>Method</th><th>Setting</th><th>exp evaluations per call</th><th>µs per call</th><th>Max relative error</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="conclusions">
+  <span class="idx">CONCLUSIONS</span>
+  <h2>What the experiments show</h2>
+  <h3>Part 1 · Riemann versus Lebesgue</h3>
+  <ul class="clean">
+    <li><b>Same value, different accuracy.</b> For every Riemann-integrable function both constructions converge to the same number. Riemann gains from smoothness (order 1 left, order 2 midpoint); Lebesgue is limited by the level spacing (order 1 always).</li>
+    <li><b>Efficiency.</b> Riemann needs <i>N</i> evaluations; Lebesgue needs the preimage measures, or sampling at Riemann's cost, which is the Monte Carlo idea behind E[<i>X</i>] = ∫ <i>x</i> dP.</li>
+    <li><b>Where they differ.</b> Dirichlet is not Riemann-integrable but has Lebesgue integral 0; Thomae is integrable for both, yet only Lebesgue sees it at once.</li>
+  </ul>
+  <h3>Part 2 · The normal CDF</h3>
+  <ul class="clean">
+    <li><b>No elementary formula, but exact via erf.</b> Liouville rules out an elementary antiderivative; erf gives an exact representation, yet evaluating it always needs an algorithm.</li>
+    <li><b>Accuracy against cost.</b> Simpson beats the trapezoid rule (order 4 against 2); the alternating series loses digits as |<i>x</i>| grows; A&amp;S gives about 7 digits in one exponential; the hybrid reaches double precision by changing method with the region.</li>
+    <li><b>Tails need relative accuracy.</b> Computing the tail directly, not as 1 − Φ, is what keeps error rates and p-values correct.</li>
+  </ul>
+</section>
+
+</main>
+
+
+
+<script>
+/*PURE_START*/
+const SQ2 = Math.SQRT2, SQ2PI = Math.sqrt(2 * Math.PI), PI = Math.PI;
+const phiPdf = t => Math.exp(-0.5 * t * t) / SQ2PI;
+let evalCounter = { n: 0 };
+
+/* ---------- Part 1: functions ---------- */
+function bisectSinc(t) { // x in [0,pi] with sinc(x)=t, sinc decreasing there
+  let lo = 0, hi = PI;
+  for (let i = 0; i < 52; i++) { const m = (lo + hi) / 2; evalCounter.n++; if (Math.sin(m) / m >= t) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+const FUNCS = [
+  { id: 'sin', label: 'sin(x), x ∈ [0, π]', a: 0, b: PI, f: Math.sin, exact: 2, ymin: 0, ymax: 1, view: 1.15,
+    dist: t => t <= 0 ? PI : t > 1 ? 0 : PI - 2 * Math.asin(t), th: [0.1, 0.3, 0.5, 0.7, 0.9],
+    note: 'Smooth and monotone on each half. Exact integral 2.' },
+  { id: 'sq', label: 'x², x ∈ [0, 1]', a: 0, b: 1, f: x => x * x, exact: 1 / 3, ymin: 0, ymax: 1, view: 1.1,
+    dist: t => t <= 0 ? 1 : t > 1 ? 0 : 1 - Math.sqrt(t), th: [0.1, 0.3, 0.5, 0.7, 0.9],
+    note: 'Smooth. The preimage of [t, 1] is [√t, 1]. Exact integral 1/3.' },
+  { id: 'step13', label: '1 if x < 0.5, 3 if x ≥ 0.5', a: 0, b: 1, f: x => x < 0.5 ? 1 : 3, exact: 2, ymin: 1, ymax: 3, view: 3.4,
+    dist: t => t <= 1 ? 1 : t <= 3 ? 0.5 : 0, th: [1, 1.5, 2, 2.5, 3],
+    note: 'A jump with only two values. Exact integral 2.' },
+  { id: 'abs', label: '|x − 0.5|, x ∈ [0, 1]', a: 0, b: 1, f: x => Math.abs(x - 0.5), exact: 0.25, ymin: 0, ymax: 0.5, view: 0.58,
+    dist: t => t <= 0 ? 1 : t > 0.5 ? 0 : 1 - 2 * t, th: [0.05, 0.15, 0.25, 0.35, 0.45],
+    note: 'A corner at 0.5. The preimage of [t, 0.5] is two intervals. Exact integral 1/4.' },
+  { id: 'inv', label: '1/√x, x ∈ (0, 1]', a: 0, b: 1, f: x => 1 / Math.sqrt(x), exact: 2, ymin: 1, ymax: null, view: 8,
+    dist: t => t <= 1 ? 1 : 1 / (t * t), th: [1.5, 2, 3, 5, 8], unbounded: true,
+    note: 'Unbounded at 0: an improper Riemann integral, finite Lebesgue integral. Exact integral 2. The left rule sets f(0) := 0.' },
+  { id: 'step10', label: '1 if x < 0.5, 0 if x ≥ 0.5', a: 0, b: 1, f: x => x < 0.5 ? 1 : 0, exact: 0.5, ymin: 0, ymax: 1, view: 1.15,
+    dist: t => t <= 0 ? 1 : t <= 1 ? 0.5 : 0, th: [0.1, 0.3, 0.5, 0.7, 1],
+    note: 'A jump between 1 and 0. Exact integral 1/2.' },
+  { id: 'sinc', label: 'sin(x)/x, x ∈ [0, π]', a: 0, b: PI, f: x => x === 0 ? 1 : Math.sin(x) / x, exact: 1.8519370519824662, ymin: 0, ymax: 1, view: 1.15,
+    dist: t => t <= 0 ? PI : t > 1 ? 0 : bisectSinc(t), th: [0.1, 0.3, 0.5, 0.7, 0.9],
+    note: 'No elementary antiderivative; exact value is Si(π) = 1.85193705… The preimage {f ≥ t} is found by bisection, since f decreases on [0, π].' }
+];
+
+function rLeft(fn, N) { const h = (fn.b - fn.a) / N; let s = 0; for (let i = 0; i < N; i++) { const x = fn.a + i * h; s += (fn.unbounded && x === 0) ? 0 : fn.f(x); } return s * h; }
+function rMid(fn, N) { const h = (fn.b - fn.a) / N; let s = 0; for (let i = 0; i < N; i++) s += fn.f(fn.a + (i + 0.5) * h); return s * h; }
+function levels(fn, B) {
+  const ymax = fn.unbounded ? fn.ymin + Math.sqrt(B) : fn.ymax;
+  return { ymin: fn.ymin, h: (ymax - fn.ymin) / B };
+}
+function lExact(fn, B) {
+  const { ymin, h } = levels(fn, B);
+  let dCur = fn.dist(ymin), s = 0;
+  for (let j = 0; j < B; j++) {
+    const y = ymin + j * h;
+    const dNext = j < B - 1 ? fn.dist(ymin + (j + 1) * h) : 0;
+    s += y * (dCur - dNext);
+    dCur = dNext;
+  }
+  return s;
+}
+function lSampled(fn, M, B) {
+  const { ymin, h } = levels(fn, B);
+  const cnt = new Float64Array(B), dx = (fn.b - fn.a) / M;
+  for (let i = 0; i < M; i++) {
+    const v = fn.f(fn.a + (i + 0.5) * dx);
+    let j = Math.floor((v - ymin) / h); if (j < 0) j = 0; else if (j >= B) j = B - 1;
+    cnt[j]++;
+  }
+  let s = 0; for (let j = 0; j < B; j++) s += (ymin + j * h) * (cnt[j] / M) * (fn.b - fn.a);
+  return s;
+}
+function order(e1, e2, n1, n2) { if (e1 < 1e-13 || e2 < 1e-13) return null; return Math.log(e1 / e2) / Math.log(n2 / n1); }
+
+/* ---------- Thomae ---------- */
+function thomaeU(N) {
+  let S = 0;
+  for (let i = 0; i < N; i++) {
+    let q = 1;
+    for (;; q++) { const lo = Math.floor((q * i + N - 1) / N), hi = Math.floor(q * (i + 1) / N); if (lo <= hi) break; }
+    S += 1 / q;
+  }
+  return S / N;
+}
+function thomaeCount(Q) { // reduced fractions in [0,1] with denominator <= Q
+  const ph = Array.from({ length: Q + 1 }, (_, i) => i);
+  for (let i = 2; i <= Q; i++) if (ph[i] === i) for (let j = i; j <= Q; j += i) ph[j] -= ph[j] / i;
+  let s = 1; for (let q = 1; q <= Q; q++) s += ph[q]; return s;
+}
+
+/* ---------- Part 2: normal CDF ---------- */
+const SQPI = Math.sqrt(PI);
+function cdfTrap(x, N) { const s = x < 0 ? -1 : 1, a = Math.abs(x), h = a / N; let S = 0.5 * (phiPdf(0) + phiPdf(a)); for (let i = 1; i < N; i++) S += phiPdf(i * h); return 0.5 + s * h * S; }
+function cdfSimp(x, N) { if (N % 2) N++; const s = x < 0 ? -1 : 1, a = Math.abs(x), h = a / N; let S = phiPdf(0) + phiPdf(a); for (let i = 1; i < N; i++) S += (i % 2 ? 4 : 2) * phiPdf(i * h); return 0.5 + s * h * S / 3; }
+function erfAlt(z, K) { let t = z, S = z; for (let k = 1; k < K; k++) { t *= -z * z / k; S += t / (2 * k + 1); } return 2 / SQPI * S; }
+function erfPos(z, K) { let t = z, S = z; for (let k = 1; k < (K || 400); k++) { t *= 2 * z * z / (2 * k + 1); S += t; if (!K && t < 1e-17 * S) break; } return 2 / SQPI * Math.exp(-z * z) * S; }
+function erfAS(x) {
+  const s = x < 0 ? -1 : 1; x = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * x);
+  return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x));
+}
+function tailCF(x, depth) { let t = x; for (let k = depth || 150; k >= 1; k--) t = x + k / t; return phiPdf(x) / t; } // 1 - Phi(x), x > 0
+function cdfAlt(x, K) { return 0.5 * (1 + erfAlt(x / SQ2, K)); }
+function cdfAS(x) { return 0.5 * (1 + erfAS(x / SQ2)); }
+function cdfHybrid(x) {
+  const a = Math.abs(x);
+  if (a < 3) { const p = 0.5 * (1 + erfPos(a / SQ2)); return x >= 0 ? p : 1 - p; }
+  const Q = tailCF(a, 150); return x >= 0 ? 1 - Q : Q;
+}
+/* Reference tails 1-Phi(k) from OEIS (A178647, A110894, A239384-A239387) */
+const REF_Q = { 1: 0.15865525393145705141476745, 2: 0.022750131948179207200282637, 3: 0.0013498980316300945266518148,
+  4: 3.1671241833119921253770757e-5, 5: 2.8665157187919391167375233e-7, 6: 9.8658764503769814070086413e-10 };
+function refPhi(x) { if (x === 0) return 0.5; const k = Math.abs(x); if (!(k in REF_Q) || !Number.isInteger(k)) return null; return x < 0 ? REF_Q[k] : 1 - REF_Q[k]; }
+/*PURE_END*/
+
+/* ================= UI ================= */
+const $ = id => document.getElementById(id);
+const sci = (v, d = 2) => (v === 0 || !isFinite(v)) ? (v === 0 ? '0' : '—') : v.toExponential(d);
+const fx = (v, d = 8) => isFinite(v) ? v.toFixed(d) : '—';
+const RED = '#ff2a3a', PINK = '#ffd3d7', SOFT = '#ff8790', DEEP = '#b0001a', MUT = '#b39a9e';
+
+/* ---------- binary rain and header bitwall ---------- */
+(function () {
+  const c = $('rain'), g = c.getContext('2d'), fs = 16; let w, h, cols, drops;
+  function size() { w = c.width = innerWidth; h = c.height = innerHeight; cols = Math.ceil(w / fs); drops = Array.from({ length: cols }, () => Math.random() * h / fs); g.fillStyle = '#050304'; g.fillRect(0, 0, w, h); }
+  size(); addEventListener('resize', size);
+  function step() {
+    g.fillStyle = 'rgba(5,3,4,.13)'; g.fillRect(0, 0, w, h); g.font = fs + 'px "JetBrains Mono",monospace';
+    for (let i = 0; i < cols; i++) {
+      g.fillStyle = Math.random() < 0.03 ? 'rgba(255,140,150,.95)' : 'rgba(255,42,58,.6)';
+      g.fillText(Math.random() < 0.5 ? '0' : '1', i * fs, drops[i] * fs);
+      if (drops[i] * fs > h && Math.random() > 0.975) drops[i] = 0; drops[i]++;
+    }
+  }
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { setInterval(() => { if (!document.hidden) step(); }, 75); } else { for (let i = 0; i < 40; i++) step(); }
+  function fillWall() { const cols = Math.ceil(innerWidth / 18.7) + 2, rows = Math.ceil(($('bitwall').parentElement.offsetHeight || 700) / 19.5) + 1; let wall = ''; for (let r = 0; r < rows; r++) { let line = ''; for (let k = 0; k < cols; k++) line += Math.random() < 0.5 ? '0 ' : '1 '; wall += line + '\n'; } $('bitwall').textContent = wall; }
+  fillWall(); addEventListener('resize', fillWall);
+})();
+
+/* ---------- chart helper ---------- */
+function setup(c) { const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1; c.width = Math.round(r.width * d); c.height = Math.round(r.height * d); const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); return { g, w: r.width, h: r.height }; }
+function niceTicks(lo, hi, n) { const span = hi - lo, raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))); const step = [1, 2, 5, 10].map(f => f * p).find(s => s >= raw) || p; const o = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) o.push(+v.toPrecision(12)); return o; }
+function decadeTicks(lo, hi, every) { const o = []; for (let e = Math.ceil(Math.log10(lo)); e <= Math.floor(Math.log10(hi)); e += every || 1) o.push(Math.pow(10, e)); return o; }
+function chart(canvas, o) {
+  const { g, w, h } = setup(canvas); g.clearRect(0, 0, w, h);
+  const L = 62, R = 16, T = 14, B = 44, pw = w - L - R, ph = h - T - B;
+  const fxf = o.xlog ? Math.log10 : v => v, fyf = o.ylog ? Math.log10 : v => v;
+  const x0 = fxf(o.xmin), x1 = fxf(o.xmax), y0 = fyf(o.ymin), y1 = fyf(o.ymax);
+  const X = v => L + (fxf(v) - x0) / (x1 - x0) * pw, Y = v => T + ph - (fyf(v) - y0) / (y1 - y0) * ph;
+  g.font = '11px "JetBrains Mono",monospace'; g.lineWidth = 1; g.strokeStyle = 'rgba(255,42,58,.12)'; g.fillStyle = MUT; g.textAlign = 'center';
+  for (const t of o.xticks) { const x = X(t); g.beginPath(); g.moveTo(x, T); g.lineTo(x, T + ph); g.stroke(); g.fillText(o.xfmt ? o.xfmt(t) : String(t), x, T + ph + 16); }
+  g.textAlign = 'right';
+  for (const t of o.yticks) { const y = Y(t); g.beginPath(); g.moveTo(L, y); g.lineTo(L + pw, y); g.stroke(); g.fillText(o.yfmt ? o.yfmt(t) : String(t), L - 8, y + 4); }
+  g.textAlign = 'center'; g.fillStyle = '#d9b8bc'; g.fillText(o.xlab, L + pw / 2, h - 6);
+  g.save(); g.translate(14, T + ph / 2); g.rotate(-Math.PI / 2); g.fillText(o.ylab, 0, 0); g.restore();
+  g.strokeStyle = 'rgba(255,42,58,.55)'; g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+  g.save(); g.beginPath(); g.rect(L, T, pw, ph); g.clip(); o.draw(g, X, Y, { L, T, pw, ph }); g.restore();
+}
+const expFmt = v => { const e = Math.round(Math.log10(v)); return '1e' + e; };
+function lineSeries(g, X, Y, xs, ys, color, floor, dash) {
+  g.save(); g.strokeStyle = color; g.fillStyle = color; g.lineWidth = 2; if (dash) g.setLineDash(dash);
+  g.beginPath(); xs.forEach((x, i) => { const y = Y(Math.max(ys[i], floor)); i ? g.lineTo(X(x), y) : g.moveTo(X(x), y); }); g.stroke(); g.setLineDash([]);
+  xs.forEach((x, i) => { g.beginPath(); g.arc(X(x), Y(Math.max(ys[i], floor)), 3.2, 0, 6.2832); g.fill(); }); g.restore();
+}
+
+/* ---------- Explorer ---------- */
+const fsel = $('fsel'); FUNCS.forEach((fn, i) => { const o = document.createElement('option'); o.value = i; o.textContent = fn.label; fsel.appendChild(o); });
+const curFn = () => FUNCS[+fsel.value];
+const curN = () => Math.pow(2, +$('nrange').value) + 1;
+function syncN() { $('nval').textContent = '= ' + curN(); }
+function timeIt(fn, reps) { const t0 = performance.now(); let r; for (let i = 0; i < reps; i++) r = fn(); return [r, (performance.now() - t0) / reps]; }
+function statCard(k, v, s, hot) { return '<div class="card stat' + (hot ? ' hot' : '') + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>'; }
+
+function runExplorer() {
+  const fn = curFn(), N = curN(); let B = Math.max(2, Math.round(+$('bnum').value) || 2);
+  const [r1, t1] = timeIt(() => rLeft(fn, N), 20), [r2, t2] = timeIt(() => rMid(fn, N), 20);
+  evalCounter.n = 0; const [r3, t3] = timeIt(() => lExact(fn, B), 20); const lexEvals = evalCounter.n / 20;
+  const [r4, t4] = timeIt(() => lSampled(fn, N, B), 20);
+  $('cards1').innerHTML =
+    statCard('Exact integral', fx(fn.exact, 10), fn.id === 'inv' || fn.id === 'sinc' ? 'known constant' : 'closed form') +
+    statCard('Riemann left', fx(r1), '|err| = ' + sci(Math.abs(r1 - fn.exact))) +
+    statCard('Riemann midpoint', fx(r2), '|err| = ' + sci(Math.abs(r2 - fn.exact)), true) +
+    statCard('Lebesgue, exact preimages', fx(r3), '|err| = ' + sci(Math.abs(r3 - fn.exact)), true) +
+    statCard('Lebesgue, sampled', fx(r4), '|err| = ' + sci(Math.abs(r4 - fn.exact)));
+  $('fnote').textContent = fn.note + ' Settings: N = M = ' + N + ' domain pieces, B = ' + B + ' range levels.';
+  const rows = [
+    ['Riemann left', r1, N, t1], ['Riemann midpoint', r2, N, t2],
+    ['Lebesgue, exact preimages', r3, Math.round(lexEvals), t3], ['Lebesgue, sampled', r4, N, t4]];
+  const tb = $('t-eff1').tBodies[0]; tb.innerHTML = '';
+  rows.forEach(r => { const tr = document.createElement('tr'); tr.innerHTML = '<td>' + r[0] + '</td><td>' + fx(r[1], 10) + '</td><td>' + sci(Math.abs(r[1] - fn.exact)) + '</td><td>' + r[2] + '</td><td>' + r[3].toFixed(4) + '</td>'; tb.appendChild(tr); });
+  drawRiemann(fn, N); drawLebesgue(fn, B);
+}
+function viewFrame(fn, canvas, draw) {
+  const xs = [0, fn.a, (fn.a + fn.b) / 2, fn.b]; const xt = fn.b === 1 ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1, 1.5, 2, 2.5, 3];
+  chart(canvas, { xmin: fn.a, xmax: fn.b, ymin: 0, ymax: fn.view, xticks: xt.filter(v => v >= fn.a && v <= fn.b), yticks: niceTicks(0, fn.view, 5), xlab: 'x', ylab: 'f(x)', xfmt: v => +v.toFixed(2), yfmt: v => +v.toFixed(2), draw });
+}
+function drawCurve(g, X, Y, fn, box) {
+  g.save(); g.strokeStyle = PINK; g.lineWidth = 2; g.beginPath(); let first = true;
+  for (let i = 0; i <= 400; i++) { const x = fn.a + (fn.b - fn.a) * (i + (i === 0 && fn.unbounded ? 0.02 : 0)) / 400; const v = fn.f(x); if (!isFinite(v)) continue; const px = X(x), py = Y(Math.min(v, fn.view * 1.5));
+    // break the line at jumps
+    if (!first && i > 0 && Math.abs(fn.f(x) - fn.f(x - (fn.b - fn.a) / 400)) > fn.view * 0.4) { g.stroke(); g.beginPath(); first = true; }
+    first ? g.moveTo(px, py) : g.lineTo(px, py); first = false; }
+  g.stroke(); g.restore();
+}
+function drawRiemann(fn, N) {
+  const n = Math.min(N, 64);
+  viewFrame(fn, $('c-riem'), (g, X, Y, box) => {
+    const h = (fn.b - fn.a) / n; g.fillStyle = 'rgba(255,42,58,.38)'; g.strokeStyle = 'rgba(255,120,130,.9)'; g.lineWidth = 1;
+    for (let i = 0; i < n; i++) { const xm = fn.a + (i + 0.5) * h, v = Math.min(fn.f(xm), fn.view * 1.5), x0 = X(fn.a + i * h), x1 = X(fn.a + (i + 1) * h); g.fillRect(x0, Y(v), x1 - x0, Y(0) - Y(v)); g.strokeRect(x0, Y(v), x1 - x0, Y(0) - Y(v)); }
+    drawCurve(g, X, Y, fn, box);
+  });
+}
+function drawLebesgue(fn, B) {
+  const nb = Math.min(B, 48), ymaxD = fn.unbounded ? fn.view : fn.ymax, h = (ymaxD - fn.ymin) / nb;
+  viewFrame(fn, $('c-leb'), (g, X, Y, box) => {
+    const cols = Math.round(box.pw), xs = new Array(cols), vs = new Array(cols);
+    for (let c = 0; c < cols; c++) { xs[c] = fn.a + (fn.b - fn.a) * (c + 0.5) / cols; vs[c] = fn.f(xs[c]); }
+    // fill from 0 up to ymin with the base slab
+    for (let j = -1; j < nb; j++) {
+      const lo = j < 0 ? 0 : fn.ymin + j * h, hi = j < 0 ? fn.ymin : fn.ymin + (j + 1) * h; if (hi <= lo) continue;
+      g.fillStyle = (j % 2 === 0) ? 'rgba(255,42,58,.45)' : 'rgba(176,0,26,.5)';
+      let start = -1;
+      for (let c = 0; c <= cols; c++) { const on = c < cols && vs[c] >= hi - 1e-12; if (on && start < 0) start = c; if (!on && start >= 0) { g.fillRect(box.L + start * box.pw / cols, Y(hi), (c - start) * box.pw / cols + 0.5, Y(lo) - Y(hi)); start = -1; } }
+    }
+    drawCurve(g, X, Y, fn, box);
+  });
+}
+
+/* ---------- Convergence ---------- */
+function runConv() {
+  const fn = curFn(), ks = []; for (let k = 2; k <= 15; k++) ks.push(k);
+  const Ns = [], e = { l: [], m: [], x: [], s: [] };
+  ks.forEach(k => { const N = Math.pow(2, k) + 1; Ns.push(N);
+    e.l.push(Math.abs(rLeft(fn, N) - fn.exact)); e.m.push(Math.abs(rMid(fn, N) - fn.exact));
+    e.x.push(Math.abs(lExact(fn, N) - fn.exact)); e.s.push(Math.abs(lSampled(fn, N, N) - fn.exact)); });
+  const all = [].concat(e.l, e.m, e.x, e.s).filter(v => v > 0), lo = Math.max(1e-17, Math.min(...all, 1e-3) * 0.5), hi = Math.max(...all, 1e-3) * 2;
+  chart($('c-conv'), { xlog: true, ylog: true, xmin: 4, xmax: 40000, ymin: lo, ymax: hi, xticks: [5, 17, 65, 257, 1025, 4097, 16385], yticks: decadeTicks(lo, hi, Math.max(1, Math.round((Math.log10(hi) - Math.log10(lo)) / 7))), xlab: 'N = B (pieces)', ylab: 'absolute error', yfmt: expFmt,
+    draw: (g, X, Y) => { lineSeries(g, X, Y, Ns, e.l, SOFT, lo); lineSeries(g, X, Y, Ns, e.m, RED, lo); lineSeries(g, X, Y, Ns, e.x, PINK, lo); lineSeries(g, X, Y, Ns, e.s, DEEP, lo, [6, 4]); } });
+}
+function runAll() {
+  const tb = $('t-all').tBodies[0]; tb.innerHTML = '';
+  FUNCS.forEach(fn => {
+    const calc = N => [Math.abs(rLeft(fn, N) - fn.exact), Math.abs(rMid(fn, N) - fn.exact), Math.abs(lExact(fn, N) - fn.exact), Math.abs(lSampled(fn, N, N) - fn.exact)];
+    const a = calc(1025), b = calc(16385), p = a.map((v, i) => order(v, b[i], 1025, 16385));
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + fn.label + '</td><td>' + fx(fn.exact, 6) + '</td>' + a.map(v => '<td>' + sci(v) + '</td>').join('') + p.map((v, i) => '<td>' + (v === null ? (a[i] < 1e-13 ? 'exact' : '—') : v.toFixed(2)) + '</td>').join('');
+    tb.appendChild(tr);
+  });
+}
+/* ---------- Pathological ---------- */
+function buildDirichlet() {
+  const tb = $('t-dir').tBodies[0]; tb.innerHTML = '';
+  [10, 100, 1000, 10000].forEach(N => { const tr = document.createElement('tr'); tr.innerHTML = '<td>' + N + '</td><td>1</td><td>0</td><td>1</td><td>0</td>'; tb.appendChild(tr); });
+}
+function runThomae() {
+  const tb = $('t-thom').tBodies[0]; tb.innerHTML = '';
+  [10, 100, 1000, 5000, 20000].forEach(N => { const u = thomaeU(N); const tr = document.createElement('tr'); tr.innerHTML = '<td>' + N + '</td><td>' + u.toFixed(6) + '</td><td>0</td><td>' + (u * Math.sqrt(N)).toFixed(3) + '</td>'; tb.appendChild(tr); });
+}
+
+/* ---------- Validation ---------- */
+function runBench() {
+  const tb = $('t-bench').tBodies[0]; tb.innerHTML = '';
+  for (let x = -6; x <= 6; x++) {
+    const ref = refPhi(x), rel = v => Math.abs(v - ref) / ref;
+    const vals = [cdfTrap(x, 1000), cdfSimp(x, 100), cdfAlt(x, 40), cdfAS(x), cdfHybrid(x)];
+    const tr = document.createElement('tr'); tr.innerHTML = '<td>' + x + '</td><td>' + ref.toPrecision(12) + '</td>' + vals.map(v => { const r = rel(v); return '<td class="' + (r > 1e-8 ? 'bad' : 'good') + '">' + (r === 0 ? '0' : sci(r)) + '</td>'; }).join(''); tb.appendChild(tr);
+  }
+}
+function runConvCdf() {
+  const x = 2, ref = refPhi(x), Ns = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192];
+  const et = Ns.map(N => Math.abs(cdfTrap(x, N) - ref)), es = Ns.map(N => Math.abs(cdfSimp(x, N) - ref));
+  const Ks = []; for (let k = 1; k <= 60; k++) Ks.push(k);
+  const ea = Ks.map(k => Math.abs(cdfAlt(x, k) - ref)), ep = Ks.map(k => Math.abs(0.5 * (1 + (x >= 0 ? 1 : -1) * erfPos(Math.abs(x) / SQ2, k)) - ref));
+  const floor = 1e-17, hi = 1;
+  chart($('c-cn'), { xlog: true, ylog: true, xmin: 1.6, xmax: 12000, ymin: floor, ymax: hi, xticks: [2, 8, 32, 128, 512, 2048, 8192], yticks: [1e-16, 1e-12, 1e-8, 1e-4, 1], xlab: 'subintervals N', ylab: 'absolute error', yfmt: expFmt,
+    draw: (g, X, Y, box) => { lineSeries(g, X, Y, Ns, et, SOFT, floor); lineSeries(g, X, Y, Ns, es, PINK, floor);
+      g.save(); g.strokeStyle = '#a0001a'; g.setLineDash([4, 4]); g.lineWidth = 2; g.beginPath(); g.moveTo(box.L, Y(1.5e-7)); g.lineTo(box.L + box.pw, Y(1.5e-7)); g.stroke(); g.restore(); } });
+  chart($('c-ck'), { xlog: false, ylog: true, xmin: 0, xmax: 60, ymin: floor, ymax: hi, xticks: [0, 10, 20, 30, 40, 50, 60], yticks: [1e-16, 1e-12, 1e-8, 1e-4, 1], xlab: 'series terms K', ylab: 'absolute error', yfmt: expFmt,
+    draw: (g, X, Y) => { lineSeries(g, X, Y, Ks, ea, RED, floor); lineSeries(g, X, Y, Ks, ep, PINK, floor); } });
+}
+function runEffc() {
+  const tb = $('t-effc').tBodies[0]; tb.innerHTML = ''; const pts = []; for (let i = 0; i < 2000; i++) pts.push(-6 + 12 * Math.random());
+  const refpts = [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6];
+  const rows = [
+    ['Trapezoid', 'N = 1000', '1001', x => cdfTrap(x, 1000)], ['Simpson', 'N = 100', '101', x => cdfSimp(x, 100)],
+    ['Alternating series', 'K = 40', '0 (40 terms)', x => cdfAlt(x, 40)], ['A&S 7.1.26', 'fixed', '1', cdfAS], ['Hybrid', 'series < 3, CF ≥ 3', '1 + ≈30 terms or ≈150 divisions', cdfHybrid]];
+  rows.forEach(r => {
+    const t0 = performance.now(); let s = 0; for (const x of pts) s += r[3](x); const us = (performance.now() - t0) * 1000 / pts.length;
+    const maxRel = Math.max(...refpts.map(x => Math.abs(r[3](x) - refPhi(x)) / refPhi(x)));
+    const tr = document.createElement('tr'); tr.innerHTML = '<td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + us.toFixed(3) + '</td><td class="' + (maxRel > 1e-8 ? 'bad' : 'good') + '">' + sci(maxRel) + '</td>'; tb.appendChild(tr);
+  });
+}
+
+/* ---------- wiring ---------- */
+syncN();
+$('nrange').addEventListener('input', () => { syncN(); $('bnum').value = curN(); runExplorer(); });
+$('bnum').value = curN();
+fsel.addEventListener('change', () => { runExplorer(); runConv(); });
+$('bnum').addEventListener('change', runExplorer);
+function wire(btnId, fn, targets) {
+  const btn = $(btnId), label = btn.textContent, note = document.createElement('span'); note.className = 'done'; btn.insertAdjacentElement('afterend', note);
+  btn.addEventListener('click', () => {
+    const els = targets.map(t => { const e = $(t); return e.closest('.tw') || e; });
+    btn.disabled = true; btn.textContent = 'Running…'; note.textContent = '';
+    els.forEach(e => { e.classList.remove('flash'); e.classList.add('busy'); });
+    setTimeout(() => {
+      try { fn(); note.textContent = '✓ updated'; } catch (err) { note.textContent = 'error: ' + err.message; }
+      els.forEach(e => { e.classList.remove('busy'); void e.offsetWidth; e.classList.add('flash'); });
+      btn.disabled = false; btn.textContent = label;
+      els[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => { note.textContent = ''; }, 2500);
+    }, 160);
+  });
+}
+wire('run9', runEffc, ['t-effc']);
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { runExplorer(); runConv(); runConvCdf(); }, 200); });
+
+buildDirichlet();
+runExplorer(); runConv(); runAll(); runThomae(); runBench(); runConvCdf(); runEffc();
+</script>
+</body>
+</html>
